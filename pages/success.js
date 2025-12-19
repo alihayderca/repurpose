@@ -4,20 +4,13 @@ import Head from 'next/head';
 
 export default function Success() {
   const router = useRouter();
-  const { email } = router.query;
 
   useEffect(() => {
-    if (email) {
-      // Store pro status in localStorage
-      localStorage.setItem('repurpose_email', email);
-      localStorage.setItem('repurpose_pro', 'true');
-      
-      // Redirect to home after 3 seconds
-      setTimeout(() => {
-        router.push('/');
-      }, 3000);
-    }
-  }, [email, router]);
+    // Redirect to home after 3 seconds
+    setTimeout(() => {
+      router.push('/');
+    }, 3000);
+  }, [router]);
 
   return (
     <>

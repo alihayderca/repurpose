@@ -38,7 +38,7 @@ export default async function handler(req, res) {
         'line_items[0][price]': priceId,
         'line_items[0][quantity]': '1',
         'customer_email': email,
-        'success_url': `${baseUrl}/success?email=${encodeURIComponent(email)}`,
+        'success_url': `${baseUrl}/success`,
         'cancel_url': `${baseUrl}`,
         'metadata[email]': email,
       }),

@@ -1,9 +1,7 @@
 // API Route: /api/repurpose
-// This runs on the server - your API key is never exposed to the browser
-// Now includes usage tracking and limits
+// Handles content generation with usage limits
 
 // Simple in-memory store for usage tracking (resets on deploy)
-// For production, use a database like Vercel KV or Supabase
 const usageStore = new Map();
 
 const FREE_DAILY_LIMIT = 3;
@@ -119,7 +117,6 @@ export default async function handler(req, res) {
   }
 }
 
-// Fetch and extract article content
 async function fetchArticle(url) {
   const response = await fetch(url, {
     headers: {
@@ -133,7 +130,6 @@ async function fetchArticle(url) {
 
   const html = await response.text();
   
-  // Extract title
   let title = 'Untitled';
   const ogTitleMatch = html.match(/<meta[^>]*property="og:title"[^>]*content="([^"]*)"[^>]*>/i);
   if (ogTitleMatch) {
@@ -145,7 +141,6 @@ async function fetchArticle(url) {
     }
   }
 
-  // Extract body content (strip HTML tags)
   let content = html
     .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '')
     .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '')
@@ -176,112 +171,86 @@ async function fetchArticle(url) {
   return { title, content, wordCount };
 }
 
-// Build system prompt based on platform and settings
 function buildSystemPrompt(platform, tone, threadLength, niche) {
   const toneInstructions = {
-    professional: `TONE: Professional but not boring. Think "respected industry voice" - credible, insightful, but still human. Avoid corporate jargon and buzzwords.`,
-    casual: `TONE: Casual and conversational. Like talking to a smart friend. Use contractions, be direct, show personality.`,
-    provocative: `TONE: Provocative and bold. Challenge conventional wisdom and make people think. Take strong positions, back them up.`,
-    educational: `TONE: Educational and helpful. Break down complex ideas clearly. Use analogies, make it actionable.`,
+    professional: `TONE: Professional but not boring. Credible, insightful, human.`,
+    casual: `TONE: Casual and conversational. Like talking to a smart friend.`,
+    provocative: `TONE: Provocative and bold. Challenge conventional wisdom.`,
+    educational: `TONE: Educational and helpful. Break down complex ideas clearly.`,
   };
 
   const nicheInstruction = niche
-    ? `\nNICHE CONTEXT: This content is for ${niche}. Use terminology and references this audience understands. Speak as one of them.`
+    ? `\nNICHE: Content is for ${niche}. Use their terminology.`
     : '';
 
   if (platform === 'twitter') {
-    return `You are an elite ghostwriter who has written viral Twitter threads for founders, creators, and thought leaders. Your threads consistently get 1000+ retweets.
+    return `You are an elite ghostwriter for viral Twitter threads.
 
-You understand the psychology of viral content:
-- Pattern interrupts grab attention in the first 3 words
-- Curiosity gaps keep people reading
-- Concrete specifics beat vague generalities
-- Stories > Statistics (but stats that shock work)
-- White space is your friend
+RULES:
+- Each tweet under 280 characters
+- Use "1/" "2/" numbering  
+- First tweet = HOOK with curiosity gap
+- Last tweet = CTA + summary
+- Use line breaks and → bullets
 
-FORMATTING RULES (critical):
-- Each tweet MUST be under 280 characters
-- Use "1/" "2/" numbering
-- First tweet is the HOOK - no fluff, pure intrigue
-- Last tweet is the CTA + summary
-- Use line breaks liberally
-- Bullets with → or • for lists
-- ALL CAPS sparingly (1-2 words max)
-
-STRUCTURE FOR A ${threadLength}-PART THREAD:
-Tweet 1 (Hook): Pattern interrupt + bold claim + curiosity gap
-Tweets 2-${threadLength - 1} (Meat): ONE clear insight per tweet with examples
-Tweet ${threadLength} (CTA): Key takeaway + call to action
+STRUCTURE (${threadLength} tweets):
+1: Pattern interrupt hook
+2-${threadLength - 1}: One insight per tweet
+${threadLength}: Takeaway + CTA
 
 ${toneInstructions[tone]}${nicheInstruction}
 
-Write the ACTUAL tweets, ready to copy-paste. No explanations or meta-commentary.`;
+Write actual tweets, ready to post.`;
   }
 
   if (platform === 'linkedin') {
-    return `You are a LinkedIn content strategist who creates posts that generate massive engagement - 500+ comments, thousands of reactions.
+    return `You are a LinkedIn content strategist for viral posts.
 
-You understand LinkedIn's algorithm and culture:
-- First line is EVERYTHING (shows before "see more")
-- Personal stories outperform corporate speak
-- Vulnerability + value = virality
-- Formatting with white space increases readability
-
-FORMATTING RULES (critical):
-- Open with a HOOK line (under 100 chars) that demands the click
-- Use single-sentence paragraphs
-- Liberal line breaks
-- Strategic emojis (1-3 total, never excessive)
-- No hashtags in body, 3-5 at the very end only
-- Total length: 1200-1500 characters
+RULES:
+- Hook line under 100 chars (shows before "see more")
+- Single-sentence paragraphs
+- 1-3 emojis total
+- Hashtags only at end (3-5)
+- 1200-1500 characters total
 
 STRUCTURE:
-Line 1 (Hook): Controversial opinion, surprising fact, or pattern interrupt
-Lines 2-4 (Setup): Bridge from hook to story/insight
-Body (Value): Share the insight with specific examples, make it actionable
-Close (CTA): Clear takeaway + question to drive comments
+- Line 1: Hook that demands click
+- Setup: Bridge to story
+- Body: Actionable value
+- Close: Question for comments
 
 ${toneInstructions[tone]}${nicheInstruction}
 
-Write the ACTUAL post, ready to copy-paste. No explanations.`;
+Write actual post, ready to publish.`;
   }
 
-  // Threads
-  return `You are a Threads content creator who understands the platform's unique vibe - more casual than Twitter, more real than LinkedIn.
+  return `You are a Threads content creator.
 
-PLATFORM UNDERSTANDING:
-- Threads is conversational and raw
-- Less corporate, more human
-- Hot takes and opinions do well
-- Connection over perfection
-
-FORMATTING RULES:
-- 500 character limit per post
-- Single post OR short thread (3-5 posts)
-- No hashtags (they don't work on Threads)
-- Minimal formatting - just line breaks
-- Conversational punctuation
+RULES:
+- 500 char limit per post
+- Single post or short thread (3-5)
+- No hashtags
+- Conversational tone
 
 ${toneInstructions[tone]}${nicheInstruction}
 
-Write the ACTUAL post(s), ready to copy-paste. No explanations.`;
+Write actual post(s), ready to publish.`;
 }
 
-// Build user prompt with article content
 function buildUserPrompt(title, content, platform) {
-  const platformLabels = {
-    twitter: 'viral Twitter thread',
-    linkedin: 'high-engagement LinkedIn post',
-    threads: 'engaging Threads content',
+  const labels = {
+    twitter: 'Twitter thread',
+    linkedin: 'LinkedIn post',
+    threads: 'Threads post',
   };
 
-  return `Transform this article into a ${platformLabels[platform]}:
+  return `Transform into a ${labels[platform]}:
 
-ARTICLE TITLE: ${title}
+TITLE: ${title}
 
-ARTICLE CONTENT:
+CONTENT:
 ${content}
 
 ---
-Generate the content now. Actual post content only, ready to copy-paste.`;
+Generate now. Ready to copy-paste.`;
 }

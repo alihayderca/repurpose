@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import Head from 'next/head';
+import { SignIn, SignUp, useUser, useClerk, SignedIn, SignedOut } from '@clerk/nextjs';
 
 const PLATFORMS = [
   { id: 'twitter', label: 'Twitter/X', icon: '𝕏' },
@@ -14,13 +15,79 @@ const TONES = [
   { id: 'educational', label: 'Educational', desc: 'Clear & instructive' },
 ];
 
-export default function Home() {
-  // Auth state
-  const [email, setEmail] = useState('');
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [isPro, setIsPro] = useState(false);
-  const [checkingAuth, setCheckingAuth] = useState(true);
+// Landing page for signed out users
+function LandingPage() {
+  const [showSignIn, setShowSignIn] = useState(false);
+  const [showSignUp, setShowSignUp] = useState(false);
 
+  return (
+    <div style={styles.container}>
+      <div style={styles.loginWrapper}>
+        <h1 style={styles.logo}>REPURPOSE<span style={styles.logoAccent}>_</span></h1>
+        <p style={styles.tagline}>Article → Viral content in seconds</p>
+
+        {!showSignIn && !showSignUp && (
+          <>
+            <div style={styles.authButtons}>
+              <button onClick={() => setShowSignUp(true)} style={styles.submitBtn}>
+                GET STARTED FREE →
+              </button>
+              <button onClick={() => setShowSignIn(true)} style={styles.secondaryBtn}>
+                Sign In
+              </button>
+            </div>
+
+            <div style={styles.pricing}>
+              <div style={styles.pricingCard}>
+                <h3 style={styles.pricingTitle}>Free</h3>
+                <p style={styles.pricingPrice}>$0</p>
+                <p style={styles.pricingFeature}>3 generations / day</p>
+              </div>
+              <div style={styles.pricingCardPro}>
+                <h3 style={styles.pricingTitle}>Pro</h3>
+                <p style={styles.pricingPrice}>$9<span style={styles.pricingPeriod}>/mo</span></p>
+                <p style={styles.pricingFeature}>Unlimited generations</p>
+              </div>
+            </div>
+          </>
+        )}
+
+        {showSignIn && (
+          <div style={styles.clerkWrapper}>
+            <SignIn 
+              routing="hash"
+              afterSignInUrl="/"
+            />
+            <button onClick={() => setShowSignIn(false)} style={styles.backBtn}>
+              ← Back
+            </button>
+          </div>
+        )}
+
+        {showSignUp && (
+          <div style={styles.clerkWrapper}>
+            <SignUp 
+              routing="hash"
+              afterSignUpUrl="/"
+            />
+            <button onClick={() => setShowSignUp(false)} style={styles.backBtn}>
+              ← Back
+            </button>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// Main app for signed in users
+function Dashboard() {
+  const { user } = useUser();
+  const { signOut } = useClerk();
+  
+  const [isPro, setIsPro] = useState(false);
+  const [checkingPro, setCheckingPro] = useState(true);
+  
   // Form state
   const [url, setUrl] = useState('');
   const [platform, setPlatform] = useState('twitter');
@@ -35,66 +102,29 @@ export default function Home() {
   const [copied, setCopied] = useState(false);
   const [checkoutLoading, setCheckoutLoading] = useState(false);
 
-  // Check for existing session on load
-  useEffect(() => {
-    const savedEmail = localStorage.getItem('repurpose_email');
-    const savedPro = localStorage.getItem('repurpose_pro');
-    
-    if (savedEmail) {
-      setEmail(savedEmail);
-      setIsLoggedIn(true);
-      
-      if (savedPro === 'true') {
-        setIsPro(true);
-        setCheckingAuth(false);
-      } else {
-        // Verify subscription status with Stripe
-        checkSubscription(savedEmail);
-      }
-    } else {
-      setCheckingAuth(false);
-    }
-  }, []);
+  const email = user?.primaryEmailAddress?.emailAddress;
 
-  const checkSubscription = async (userEmail) => {
+  // Check subscription on load
+  useEffect(() => {
+    if (email) {
+      checkSubscription();
+    }
+  }, [email]);
+
+  const checkSubscription = async () => {
     try {
       const response = await fetch('/api/check-subscription', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: userEmail }),
+        body: JSON.stringify({ email }),
       });
       const data = await response.json();
       setIsPro(data.isPro);
-      if (data.isPro) {
-        localStorage.setItem('repurpose_pro', 'true');
-      }
     } catch (err) {
       console.error('Failed to check subscription:', err);
     } finally {
-      setCheckingAuth(false);
+      setCheckingPro(false);
     }
-  };
-
-  const handleLogin = (e) => {
-    e.preventDefault();
-    if (!email.trim() || !email.includes('@')) {
-      setError('Enter a valid email');
-      return;
-    }
-    localStorage.setItem('repurpose_email', email);
-    setIsLoggedIn(true);
-    setError('');
-    checkSubscription(email);
-  };
-
-  const handleLogout = () => {
-    localStorage.removeItem('repurpose_email');
-    localStorage.removeItem('repurpose_pro');
-    setEmail('');
-    setIsLoggedIn(false);
-    setIsPro(false);
-    setOutput('');
-    setUsage(null);
   };
 
   const handleUpgrade = async () => {
@@ -166,75 +196,178 @@ export default function Home() {
     setTimeout(() => setCopied(false), 2000);
   };
 
-  // Show loading while checking auth
-  if (checkingAuth) {
+  if (checkingPro) {
     return (
-      <>
-        <Head>
-          <title>REPURPOSE_</title>
-          <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
-        </Head>
-        <div style={{ ...styles.container, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <p style={{ color: '#444', fontFamily: "'JetBrains Mono', monospace" }}>Loading...</p>
-        </div>
-      </>
+      <div style={{ ...styles.container, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <p style={{ color: '#444', fontFamily: "'JetBrains Mono', monospace" }}>Loading...</p>
+      </div>
     );
   }
 
-  // Show login screen if not logged in
-  if (!isLoggedIn) {
-    return (
-      <>
-        <Head>
-          <title>REPURPOSE_ | Article to Viral Content</title>
-          <meta name="description" content="Transform any article into viral social media content" />
-          <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
-        </Head>
-
-        <div style={styles.container}>
-          <div style={styles.loginWrapper}>
-            <h1 style={styles.logo}>REPURPOSE<span style={styles.logoAccent}>_</span></h1>
-            <p style={styles.tagline}>Article → Viral content in seconds</p>
-            
-            <form onSubmit={handleLogin} style={styles.loginForm}>
-              <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="Enter your email"
-                style={styles.urlInput}
-              />
-              <button type="submit" style={styles.submitBtn}>
-                GET STARTED →
-              </button>
-            </form>
-            
-            {error && <div style={styles.error}>{error}</div>}
-            
-            <div style={styles.pricing}>
-              <div style={styles.pricingCard}>
-                <h3 style={styles.pricingTitle}>Free</h3>
-                <p style={styles.pricingPrice}>$0</p>
-                <p style={styles.pricingFeature}>3 generations / day</p>
-              </div>
-              <div style={{ ...styles.pricingCard, ...styles.pricingCardPro }}>
-                <h3 style={styles.pricingTitle}>Pro</h3>
-                <p style={styles.pricingPrice}>$9<span style={styles.pricingPeriod}>/mo</span></p>
-                <p style={styles.pricingFeature}>Unlimited generations</p>
-              </div>
-            </div>
+  return (
+    <div style={styles.container}>
+      {/* Header with user info */}
+      <header style={styles.header}>
+        <div style={styles.headerTop}>
+          <h1 style={styles.logoSmall}>REPURPOSE<span style={styles.logoAccent}>_</span></h1>
+          <div style={styles.userInfo}>
+            {isPro && <span style={styles.proBadge}>PRO</span>}
+            <span style={styles.userEmail}>{email}</span>
+            <button onClick={() => signOut()} style={styles.logoutBtn}>Logout</button>
           </div>
         </div>
+        
+        {/* Usage indicator for free users */}
+        {!isPro && (
+          <div style={styles.usageBar}>
+            <span style={styles.usageText}>
+              {usage ? `${usage.used}/${usage.limit} free generations today` : '3 free generations / day'}
+            </span>
+            <button onClick={handleUpgrade} disabled={checkoutLoading} style={styles.upgradeBtn}>
+              {checkoutLoading ? 'Loading...' : 'Upgrade to Pro — $9/mo'}
+            </button>
+          </div>
+        )}
+      </header>
 
-        <style jsx global>{`
-          * { box-sizing: border-box; margin: 0; padding: 0; }
-          body { background: #0a0a0a; font-family: 'JetBrains Mono', monospace; }
-        `}</style>
-      </>
-    );
-  }
+      <main style={styles.main}>
+        <form style={styles.inputSection} onSubmit={handleSubmit}>
+          {/* URL Input */}
+          <div style={styles.fieldGroup}>
+            <label style={styles.label}>ARTICLE URL</label>
+            <input
+              type="url"
+              value={url}
+              onChange={(e) => setUrl(e.target.value)}
+              placeholder="https://example.com/article"
+              style={styles.urlInput}
+            />
+          </div>
 
-  // Main app (logged in)
+          {/* Platform Selection */}
+          <div style={styles.fieldGroup}>
+            <label style={styles.label}>PLATFORM</label>
+            <div style={styles.platformGrid}>
+              {PLATFORMS.map((p) => (
+                <button
+                  key={p.id}
+                  type="button"
+                  onClick={() => setPlatform(p.id)}
+                  style={{
+                    ...styles.platformBtn,
+                    ...(platform === p.id ? styles.platformBtnActive : {}),
+                  }}
+                >
+                  <span style={styles.platformIcon}>{p.icon}</span>
+                  <span style={styles.platformLabel}>{p.label}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Tone Selection */}
+          <div style={styles.fieldGroup}>
+            <label style={styles.label}>TONE</label>
+            <div style={styles.toneGrid}>
+              {TONES.map((t) => (
+                <button
+                  key={t.id}
+                  type="button"
+                  onClick={() => setTone(t.id)}
+                  style={{
+                    ...styles.toneBtn,
+                    ...(tone === t.id ? styles.toneBtnActive : {}),
+                  }}
+                >
+                  <span style={styles.toneLabel}>{t.label}</span>
+                  <span style={styles.toneDesc}>{t.desc}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Thread Length (Twitter only) */}
+          {platform === 'twitter' && (
+            <div style={styles.fieldGroup}>
+              <label style={styles.label}>
+                THREAD LENGTH: <span style={styles.lengthValue}>{threadLength}</span>
+              </label>
+              <input
+                type="range"
+                min="3"
+                max="15"
+                value={threadLength}
+                onChange={(e) => setThreadLength(parseInt(e.target.value))}
+                style={styles.slider}
+              />
+              <div style={styles.sliderLabels}>
+                <span>3</span>
+                <span>15</span>
+              </div>
+            </div>
+          )}
+
+          {/* Niche (Optional) */}
+          <div style={styles.fieldGroup}>
+            <label style={styles.label}>NICHE <span style={styles.optional}>(optional)</span></label>
+            <input
+              type="text"
+              value={niche}
+              onChange={(e) => setNiche(e.target.value)}
+              placeholder="e.g., SaaS founders, fitness coaches"
+              style={styles.nicheInput}
+            />
+          </div>
+
+          {/* Submit Button */}
+          <button
+            type="submit"
+            disabled={loading}
+            style={{
+              ...styles.submitBtn,
+              ...(loading ? styles.submitBtnLoading : {}),
+            }}
+          >
+            {loading ? 'GENERATING...' : 'REPURPOSE →'}
+          </button>
+
+          {error && <div style={styles.error}>{error}</div>}
+        </form>
+
+        {/* Output Section */}
+        <section style={styles.outputSection}>
+          <div style={styles.outputHeader}>
+            <label style={styles.label}>
+              OUTPUT
+              {meta && <span style={styles.meta}> — {meta.title}</span>}
+            </label>
+            {output && (
+              <button onClick={copyToClipboard} style={styles.copyBtn}>
+                {copied ? '✓ COPIED' : 'COPY'}
+              </button>
+            )}
+          </div>
+          <div style={styles.outputBox}>
+            {output ? (
+              <pre style={styles.outputText}>{output}</pre>
+            ) : (
+              <div style={styles.placeholder}>
+                <span style={styles.placeholderIcon}>⚡</span>
+                <span>Your viral content will appear here</span>
+              </div>
+            )}
+          </div>
+        </section>
+      </main>
+
+      <footer style={styles.footer}>
+        <span>Built for speed. Ship it.</span>
+      </footer>
+    </div>
+  );
+}
+
+export default function Home() {
   return (
     <>
       <Head>
@@ -244,165 +377,13 @@ export default function Home() {
         <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
       </Head>
 
-      <div style={styles.container}>
-        {/* Header with user info */}
-        <header style={styles.header}>
-          <div style={styles.headerTop}>
-            <h1 style={styles.logoSmall}>REPURPOSE<span style={styles.logoAccent}>_</span></h1>
-            <div style={styles.userInfo}>
-              {isPro && <span style={styles.proBadge}>PRO</span>}
-              <span style={styles.userEmail}>{email}</span>
-              <button onClick={handleLogout} style={styles.logoutBtn}>Logout</button>
-            </div>
-          </div>
-          
-          {/* Usage indicator for free users */}
-          {!isPro && (
-            <div style={styles.usageBar}>
-              <span style={styles.usageText}>
-                {usage ? `${usage.used}/${usage.limit} free generations today` : '3 free generations / day'}
-              </span>
-              <button onClick={handleUpgrade} disabled={checkoutLoading} style={styles.upgradeBtn}>
-                {checkoutLoading ? 'Loading...' : 'Upgrade to Pro →'}
-              </button>
-            </div>
-          )}
-        </header>
-
-        <main style={styles.main}>
-          <form style={styles.inputSection} onSubmit={handleSubmit}>
-            {/* URL Input */}
-            <div style={styles.fieldGroup}>
-              <label style={styles.label}>ARTICLE URL</label>
-              <input
-                type="url"
-                value={url}
-                onChange={(e) => setUrl(e.target.value)}
-                placeholder="https://example.com/article"
-                style={styles.urlInput}
-              />
-            </div>
-
-            {/* Platform Selection */}
-            <div style={styles.fieldGroup}>
-              <label style={styles.label}>PLATFORM</label>
-              <div style={styles.platformGrid}>
-                {PLATFORMS.map((p) => (
-                  <button
-                    key={p.id}
-                    type="button"
-                    onClick={() => setPlatform(p.id)}
-                    style={{
-                      ...styles.platformBtn,
-                      ...(platform === p.id ? styles.platformBtnActive : {}),
-                    }}
-                  >
-                    <span style={styles.platformIcon}>{p.icon}</span>
-                    <span style={styles.platformLabel}>{p.label}</span>
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Tone Selection */}
-            <div style={styles.fieldGroup}>
-              <label style={styles.label}>TONE</label>
-              <div style={styles.toneGrid}>
-                {TONES.map((t) => (
-                  <button
-                    key={t.id}
-                    type="button"
-                    onClick={() => setTone(t.id)}
-                    style={{
-                      ...styles.toneBtn,
-                      ...(tone === t.id ? styles.toneBtnActive : {}),
-                    }}
-                  >
-                    <span style={styles.toneLabel}>{t.label}</span>
-                    <span style={styles.toneDesc}>{t.desc}</span>
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Thread Length (Twitter only) */}
-            {platform === 'twitter' && (
-              <div style={styles.fieldGroup}>
-                <label style={styles.label}>
-                  THREAD LENGTH: <span style={styles.lengthValue}>{threadLength}</span>
-                </label>
-                <input
-                  type="range"
-                  min="3"
-                  max="15"
-                  value={threadLength}
-                  onChange={(e) => setThreadLength(parseInt(e.target.value))}
-                  style={styles.slider}
-                />
-                <div style={styles.sliderLabels}>
-                  <span>3</span>
-                  <span>15</span>
-                </div>
-              </div>
-            )}
-
-            {/* Niche (Optional) */}
-            <div style={styles.fieldGroup}>
-              <label style={styles.label}>NICHE <span style={styles.optional}>(optional)</span></label>
-              <input
-                type="text"
-                value={niche}
-                onChange={(e) => setNiche(e.target.value)}
-                placeholder="e.g., SaaS founders, fitness coaches"
-                style={styles.nicheInput}
-              />
-            </div>
-
-            {/* Submit Button */}
-            <button
-              type="submit"
-              disabled={loading}
-              style={{
-                ...styles.submitBtn,
-                ...(loading ? styles.submitBtnLoading : {}),
-              }}
-            >
-              {loading ? 'GENERATING...' : 'REPURPOSE →'}
-            </button>
-
-            {error && <div style={styles.error}>{error}</div>}
-          </form>
-
-          {/* Output Section */}
-          <section style={styles.outputSection}>
-            <div style={styles.outputHeader}>
-              <label style={styles.label}>
-                OUTPUT
-                {meta && <span style={styles.meta}> — {meta.title}</span>}
-              </label>
-              {output && (
-                <button onClick={copyToClipboard} style={styles.copyBtn}>
-                  {copied ? '✓ COPIED' : 'COPY'}
-                </button>
-              )}
-            </div>
-            <div style={styles.outputBox}>
-              {output ? (
-                <pre style={styles.outputText}>{output}</pre>
-              ) : (
-                <div style={styles.placeholder}>
-                  <span style={styles.placeholderIcon}>⚡</span>
-                  <span>Your viral content will appear here</span>
-                </div>
-              )}
-            </div>
-          </section>
-        </main>
-
-        <footer style={styles.footer}>
-          <span>Built for speed. Ship it.</span>
-        </footer>
-      </div>
+      <SignedOut>
+        <LandingPage />
+      </SignedOut>
+      
+      <SignedIn>
+        <Dashboard />
+      </SignedIn>
 
       <style jsx global>{`
         * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -422,7 +403,7 @@ const styles = {
     background: '#0a0a0a',
     position: 'relative',
   },
-  // Login styles
+  // Landing/Login styles
   loginWrapper: {
     minHeight: '100vh',
     display: 'flex',
@@ -431,13 +412,40 @@ const styles = {
     justifyContent: 'center',
     padding: '24px',
   },
-  loginForm: {
-    width: '100%',
-    maxWidth: '400px',
+  authButtons: {
     display: 'flex',
     flexDirection: 'column',
     gap: '12px',
     marginTop: '32px',
+    width: '100%',
+    maxWidth: '300px',
+  },
+  secondaryBtn: {
+    padding: '14px 32px',
+    fontSize: '14px',
+    fontWeight: 600,
+    fontFamily: "'JetBrains Mono', monospace",
+    background: 'transparent',
+    color: '#888',
+    border: '2px solid #333',
+    borderRadius: '6px',
+    cursor: 'pointer',
+  },
+  clerkWrapper: {
+    marginTop: '32px',
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    gap: '16px',
+  },
+  backBtn: {
+    padding: '8px 16px',
+    fontSize: '13px',
+    fontFamily: "'JetBrains Mono', monospace",
+    background: 'transparent',
+    color: '#666',
+    border: 'none',
+    cursor: 'pointer',
   },
   pricing: {
     display: 'flex',
@@ -453,19 +461,25 @@ const styles = {
     width: '160px',
   },
   pricingCardPro: {
-    borderColor: '#00ff88',
-    background: '#0a1a10',
+    padding: '24px',
+    background: '#111',
+    border: '2px solid #333',
+    borderRadius: '8px',
+    textAlign: 'center',
+    width: '160px',
   },
   pricingTitle: {
     fontSize: '14px',
     color: '#888',
     marginBottom: '8px',
     fontWeight: 600,
+    fontFamily: "'JetBrains Mono', monospace",
   },
   pricingPrice: {
     fontSize: '32px',
     fontWeight: 800,
     color: '#fff',
+    fontFamily: "'JetBrains Mono', monospace",
   },
   pricingPeriod: {
     fontSize: '14px',
@@ -476,6 +490,7 @@ const styles = {
     fontSize: '11px',
     color: '#555',
     marginTop: '8px',
+    fontFamily: "'JetBrains Mono', monospace",
   },
   // Header styles
   header: {
@@ -508,10 +523,12 @@ const styles = {
     fontWeight: 700,
     borderRadius: '4px',
     letterSpacing: '1px',
+    fontFamily: "'JetBrains Mono', monospace",
   },
   userEmail: {
     fontSize: '13px',
     color: '#666',
+    fontFamily: "'JetBrains Mono', monospace",
   },
   logoutBtn: {
     padding: '6px 12px',
@@ -535,6 +552,7 @@ const styles = {
   usageText: {
     fontSize: '12px',
     color: '#666',
+    fontFamily: "'JetBrains Mono', monospace",
   },
   upgradeBtn: {
     padding: '8px 16px',
@@ -547,7 +565,7 @@ const styles = {
     cursor: 'pointer',
     fontFamily: "'JetBrains Mono', monospace",
   },
-  // Rest of styles
+  // Main styles
   logo: {
     fontSize: '48px',
     fontWeight: 900,

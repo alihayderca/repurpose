@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Head from 'next/head';
 
 const PLATFORMS = [
@@ -15,6 +15,13 @@ const TONES = [
 ];
 
 export default function Home() {
+  // Auth state
+  const [email, setEmail] = useState('');
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [isPro, setIsPro] = useState(false);
+  const [checkingAuth, setCheckingAuth] = useState(true);
+
+  // Form state
   const [url, setUrl] = useState('');
   const [platform, setPlatform] = useState('twitter');
   const [tone, setTone] = useState('professional');
@@ -22,9 +29,95 @@ export default function Home() {
   const [niche, setNiche] = useState('');
   const [output, setOutput] = useState('');
   const [meta, setMeta] = useState(null);
+  const [usage, setUsage] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [copied, setCopied] = useState(false);
+  const [checkoutLoading, setCheckoutLoading] = useState(false);
+
+  // Check for existing session on load
+  useEffect(() => {
+    const savedEmail = localStorage.getItem('repurpose_email');
+    const savedPro = localStorage.getItem('repurpose_pro');
+    
+    if (savedEmail) {
+      setEmail(savedEmail);
+      setIsLoggedIn(true);
+      
+      if (savedPro === 'true') {
+        setIsPro(true);
+        setCheckingAuth(false);
+      } else {
+        // Verify subscription status with Stripe
+        checkSubscription(savedEmail);
+      }
+    } else {
+      setCheckingAuth(false);
+    }
+  }, []);
+
+  const checkSubscription = async (userEmail) => {
+    try {
+      const response = await fetch('/api/check-subscription', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: userEmail }),
+      });
+      const data = await response.json();
+      setIsPro(data.isPro);
+      if (data.isPro) {
+        localStorage.setItem('repurpose_pro', 'true');
+      }
+    } catch (err) {
+      console.error('Failed to check subscription:', err);
+    } finally {
+      setCheckingAuth(false);
+    }
+  };
+
+  const handleLogin = (e) => {
+    e.preventDefault();
+    if (!email.trim() || !email.includes('@')) {
+      setError('Enter a valid email');
+      return;
+    }
+    localStorage.setItem('repurpose_email', email);
+    setIsLoggedIn(true);
+    setError('');
+    checkSubscription(email);
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem('repurpose_email');
+    localStorage.removeItem('repurpose_pro');
+    setEmail('');
+    setIsLoggedIn(false);
+    setIsPro(false);
+    setOutput('');
+    setUsage(null);
+  };
+
+  const handleUpgrade = async () => {
+    setCheckoutLoading(true);
+    try {
+      const response = await fetch('/api/checkout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email }),
+      });
+      const data = await response.json();
+      
+      if (data.url) {
+        window.location.href = data.url;
+      } else {
+        setError(data.error || 'Failed to start checkout');
+      }
+    } catch (err) {
+      setError('Failed to start checkout');
+    } finally {
+      setCheckoutLoading(false);
+    }
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -43,17 +136,23 @@ export default function Home() {
       const response = await fetch('/api/repurpose', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ url, platform, tone, threadLength, niche }),
+        body: JSON.stringify({ url, platform, tone, threadLength, niche, email, isPro }),
       });
 
       const data = await response.json();
 
       if (!response.ok) {
+        if (data.limitReached) {
+          setUsage({ used: data.usage, limit: data.limit, remaining: 0 });
+        }
         throw new Error(data.error || 'Failed to generate content');
       }
 
       setOutput(data.output);
       setMeta(data.meta);
+      if (data.usage) {
+        setUsage(data.usage);
+      }
     } catch (err) {
       setError(err.message);
     } finally {
@@ -67,21 +166,107 @@ export default function Home() {
     setTimeout(() => setCopied(false), 2000);
   };
 
+  // Show loading while checking auth
+  if (checkingAuth) {
+    return (
+      <>
+        <Head>
+          <title>REPURPOSE_</title>
+          <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+        </Head>
+        <div style={{ ...styles.container, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <p style={{ color: '#444', fontFamily: "'JetBrains Mono', monospace" }}>Loading...</p>
+        </div>
+      </>
+    );
+  }
+
+  // Show login screen if not logged in
+  if (!isLoggedIn) {
+    return (
+      <>
+        <Head>
+          <title>REPURPOSE_ | Article to Viral Content</title>
+          <meta name="description" content="Transform any article into viral social media content" />
+          <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+        </Head>
+
+        <div style={styles.container}>
+          <div style={styles.loginWrapper}>
+            <h1 style={styles.logo}>REPURPOSE<span style={styles.logoAccent}>_</span></h1>
+            <p style={styles.tagline}>Article → Viral content in seconds</p>
+            
+            <form onSubmit={handleLogin} style={styles.loginForm}>
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="Enter your email"
+                style={styles.urlInput}
+              />
+              <button type="submit" style={styles.submitBtn}>
+                GET STARTED →
+              </button>
+            </form>
+            
+            {error && <div style={styles.error}>{error}</div>}
+            
+            <div style={styles.pricing}>
+              <div style={styles.pricingCard}>
+                <h3 style={styles.pricingTitle}>Free</h3>
+                <p style={styles.pricingPrice}>$0</p>
+                <p style={styles.pricingFeature}>3 generations / day</p>
+              </div>
+              <div style={{ ...styles.pricingCard, ...styles.pricingCardPro }}>
+                <h3 style={styles.pricingTitle}>Pro</h3>
+                <p style={styles.pricingPrice}>$9<span style={styles.pricingPeriod}>/mo</span></p>
+                <p style={styles.pricingFeature}>Unlimited generations</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <style jsx global>{`
+          * { box-sizing: border-box; margin: 0; padding: 0; }
+          body { background: #0a0a0a; font-family: 'JetBrains Mono', monospace; }
+        `}</style>
+      </>
+    );
+  }
+
+  // Main app (logged in)
   return (
     <>
       <Head>
         <title>REPURPOSE_ | Article to Viral Content</title>
         <meta name="description" content="Transform any article into viral social media content" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
       </Head>
 
       <div style={styles.container}>
+        {/* Header with user info */}
         <header style={styles.header}>
-          <h1 style={styles.logo}>REPURPOSE<span style={styles.logoAccent}>_</span></h1>
-          <p style={styles.tagline}>Article → Viral content in seconds</p>
+          <div style={styles.headerTop}>
+            <h1 style={styles.logoSmall}>REPURPOSE<span style={styles.logoAccent}>_</span></h1>
+            <div style={styles.userInfo}>
+              {isPro && <span style={styles.proBadge}>PRO</span>}
+              <span style={styles.userEmail}>{email}</span>
+              <button onClick={handleLogout} style={styles.logoutBtn}>Logout</button>
+            </div>
+          </div>
+          
+          {/* Usage indicator for free users */}
+          {!isPro && (
+            <div style={styles.usageBar}>
+              <span style={styles.usageText}>
+                {usage ? `${usage.used}/${usage.limit} free generations today` : '3 free generations / day'}
+              </span>
+              <button onClick={handleUpgrade} disabled={checkoutLoading} style={styles.upgradeBtn}>
+                {checkoutLoading ? 'Loading...' : 'Upgrade to Pro →'}
+              </button>
+            </div>
+          )}
         </header>
 
         <main style={styles.main}>
@@ -220,24 +405,11 @@ export default function Home() {
       </div>
 
       <style jsx global>{`
-        * {
-          box-sizing: border-box;
-          margin: 0;
-          padding: 0;
-        }
-        body {
-          background: #0a0a0a;
-          color: #e5e5e5;
-          font-family: 'JetBrains Mono', 'SF Mono', 'Consolas', monospace;
-        }
-        ::selection {
-          background: #00ff88;
-          color: #000;
-        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { background: #0a0a0a; color: #e5e5e5; font-family: 'JetBrains Mono', monospace; }
+        ::selection { background: #00ff88; color: #000; }
         @media (max-width: 900px) {
-          main {
-            grid-template-columns: 1fr !important;
-          }
+          main { grid-template-columns: 1fr !important; }
         }
       `}</style>
     </>
@@ -250,10 +422,132 @@ const styles = {
     background: '#0a0a0a',
     position: 'relative',
   },
-  header: {
-    padding: '48px 24px 24px',
-    textAlign: 'center',
+  // Login styles
+  loginWrapper: {
+    minHeight: '100vh',
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: '24px',
   },
+  loginForm: {
+    width: '100%',
+    maxWidth: '400px',
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '12px',
+    marginTop: '32px',
+  },
+  pricing: {
+    display: 'flex',
+    gap: '16px',
+    marginTop: '48px',
+  },
+  pricingCard: {
+    padding: '24px',
+    background: '#111',
+    border: '2px solid #222',
+    borderRadius: '8px',
+    textAlign: 'center',
+    width: '160px',
+  },
+  pricingCardPro: {
+    borderColor: '#00ff88',
+    background: '#0a1a10',
+  },
+  pricingTitle: {
+    fontSize: '14px',
+    color: '#888',
+    marginBottom: '8px',
+    fontWeight: 600,
+  },
+  pricingPrice: {
+    fontSize: '32px',
+    fontWeight: 800,
+    color: '#fff',
+  },
+  pricingPeriod: {
+    fontSize: '14px',
+    color: '#666',
+    fontWeight: 400,
+  },
+  pricingFeature: {
+    fontSize: '11px',
+    color: '#555',
+    marginTop: '8px',
+  },
+  // Header styles
+  header: {
+    padding: '16px 24px',
+    borderBottom: '1px solid #151515',
+  },
+  headerTop: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  logoSmall: {
+    fontSize: '24px',
+    fontWeight: 900,
+    letterSpacing: '-2px',
+    color: '#fff',
+    margin: 0,
+    fontFamily: "'JetBrains Mono', monospace",
+  },
+  userInfo: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '12px',
+  },
+  proBadge: {
+    padding: '4px 8px',
+    background: '#00ff88',
+    color: '#000',
+    fontSize: '10px',
+    fontWeight: 700,
+    borderRadius: '4px',
+    letterSpacing: '1px',
+  },
+  userEmail: {
+    fontSize: '13px',
+    color: '#666',
+  },
+  logoutBtn: {
+    padding: '6px 12px',
+    background: 'transparent',
+    border: '1px solid #333',
+    borderRadius: '4px',
+    color: '#666',
+    fontSize: '11px',
+    cursor: 'pointer',
+    fontFamily: "'JetBrains Mono', monospace",
+  },
+  usageBar: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginTop: '12px',
+    padding: '12px 16px',
+    background: '#111',
+    borderRadius: '6px',
+  },
+  usageText: {
+    fontSize: '12px',
+    color: '#666',
+  },
+  upgradeBtn: {
+    padding: '8px 16px',
+    background: '#00ff88',
+    color: '#000',
+    border: 'none',
+    borderRadius: '4px',
+    fontSize: '12px',
+    fontWeight: 600,
+    cursor: 'pointer',
+    fontFamily: "'JetBrains Mono', monospace",
+  },
+  // Rest of styles
   logo: {
     fontSize: '48px',
     fontWeight: 900,

@@ -1,15 +1,56 @@
 // API Route: /api/repurpose
 // This runs on the server - your API key is never exposed to the browser
+// Now includes usage tracking and limits
+
+// Simple in-memory store for usage tracking (resets on deploy)
+// For production, use a database like Vercel KV or Supabase
+const usageStore = new Map();
+
+const FREE_DAILY_LIMIT = 3;
+
+function getUsageKey(email) {
+  const today = new Date().toISOString().split('T')[0];
+  return `${email}:${today}`;
+}
+
+function getUsage(email) {
+  const key = getUsageKey(email);
+  return usageStore.get(key) || 0;
+}
+
+function incrementUsage(email) {
+  const key = getUsageKey(email);
+  const current = usageStore.get(key) || 0;
+  usageStore.set(key, current + 1);
+  return current + 1;
+}
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  const { url, platform, tone, threadLength, niche } = req.body;
+  const { url, platform, tone, threadLength, niche, email, isPro } = req.body;
 
   if (!url) {
     return res.status(400).json({ error: 'URL is required' });
+  }
+
+  if (!email) {
+    return res.status(400).json({ error: 'Email is required' });
+  }
+
+  // Check usage limits for free users
+  if (!isPro) {
+    const currentUsage = getUsage(email);
+    if (currentUsage >= FREE_DAILY_LIMIT) {
+      return res.status(429).json({ 
+        error: `Daily limit reached (${FREE_DAILY_LIMIT}/${FREE_DAILY_LIMIT}). Upgrade to Pro for unlimited access.`,
+        limitReached: true,
+        usage: currentUsage,
+        limit: FREE_DAILY_LIMIT,
+      });
+    }
   }
 
   const apiKey = process.env.ANTHROPIC_API_KEY;
@@ -53,11 +94,22 @@ export default async function handler(req, res) {
     const data = await response.json();
     const output = data.content[0].text;
 
+    // Increment usage for free users after successful generation
+    let usage = getUsage(email);
+    if (!isPro) {
+      usage = incrementUsage(email);
+    }
+
     return res.status(200).json({ 
       output,
       meta: {
         title: articleContent.title,
         wordCount: articleContent.wordCount,
+      },
+      usage: isPro ? null : {
+        used: usage,
+        limit: FREE_DAILY_LIMIT,
+        remaining: FREE_DAILY_LIMIT - usage,
       }
     });
 
@@ -95,32 +147,26 @@ async function fetchArticle(url) {
 
   // Extract body content (strip HTML tags)
   let content = html
-    // Remove script, style, nav, header, footer, aside
     .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '')
     .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '')
     .replace(/<nav[^>]*>[\s\S]*?<\/nav>/gi, '')
     .replace(/<header[^>]*>[\s\S]*?<\/header>/gi, '')
     .replace(/<footer[^>]*>[\s\S]*?<\/footer>/gi, '')
     .replace(/<aside[^>]*>[\s\S]*?<\/aside>/gi, '')
-    // Get text from paragraphs
     .replace(/<p[^>]*>/gi, '\n\n')
     .replace(/<br\s*\/?>/gi, '\n')
     .replace(/<\/p>/gi, '')
-    // Remove all remaining HTML tags
     .replace(/<[^>]+>/g, ' ')
-    // Decode HTML entities
     .replace(/&nbsp;/g, ' ')
     .replace(/&amp;/g, '&')
     .replace(/&lt;/g, '<')
     .replace(/&gt;/g, '>')
     .replace(/&quot;/g, '"')
     .replace(/&#39;/g, "'")
-    // Clean up whitespace
     .replace(/\s+/g, ' ')
     .replace(/\n\s*\n/g, '\n\n')
     .trim();
 
-  // Limit content length to avoid token limits
   if (content.length > 15000) {
     content = content.substring(0, 15000) + '...';
   }

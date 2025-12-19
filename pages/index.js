@@ -78,59 +78,63 @@ export default function Home() {
         <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
       </Head>
 
-      <div className="container">
-        <div className="grain" />
-
-        <header className="header">
-          <h1 className="logo">REPURPOSE<span className="logo-accent">_</span></h1>
-          <p className="tagline">Article → Viral content in seconds</p>
+      <div style={styles.container}>
+        <header style={styles.header}>
+          <h1 style={styles.logo}>REPURPOSE<span style={styles.logoAccent}>_</span></h1>
+          <p style={styles.tagline}>Article → Viral content in seconds</p>
         </header>
 
-        <main className="main">
-          <form className="input-section" onSubmit={handleSubmit}>
+        <main style={styles.main}>
+          <form style={styles.inputSection} onSubmit={handleSubmit}>
             {/* URL Input */}
-            <div className="field-group">
-              <label className="label">ARTICLE URL</label>
+            <div style={styles.fieldGroup}>
+              <label style={styles.label}>ARTICLE URL</label>
               <input
                 type="url"
                 value={url}
                 onChange={(e) => setUrl(e.target.value)}
                 placeholder="https://example.com/article"
-                className="url-input"
+                style={styles.urlInput}
               />
             </div>
 
             {/* Platform Selection */}
-            <div className="field-group">
-              <label className="label">PLATFORM</label>
-              <div className="platform-grid">
+            <div style={styles.fieldGroup}>
+              <label style={styles.label}>PLATFORM</label>
+              <div style={styles.platformGrid}>
                 {PLATFORMS.map((p) => (
                   <button
                     key={p.id}
                     type="button"
                     onClick={() => setPlatform(p.id)}
-                    className={`platform-btn ${platform === p.id ? 'active' : ''}`}
+                    style={{
+                      ...styles.platformBtn,
+                      ...(platform === p.id ? styles.platformBtnActive : {}),
+                    }}
                   >
-                    <span className="platform-icon">{p.icon}</span>
-                    <span className="platform-label">{p.label}</span>
+                    <span style={styles.platformIcon}>{p.icon}</span>
+                    <span style={styles.platformLabel}>{p.label}</span>
                   </button>
                 ))}
               </div>
             </div>
 
             {/* Tone Selection */}
-            <div className="field-group">
-              <label className="label">TONE</label>
-              <div className="tone-grid">
+            <div style={styles.fieldGroup}>
+              <label style={styles.label}>TONE</label>
+              <div style={styles.toneGrid}>
                 {TONES.map((t) => (
                   <button
                     key={t.id}
                     type="button"
                     onClick={() => setTone(t.id)}
-                    className={`tone-btn ${tone === t.id ? 'active' : ''}`}
+                    style={{
+                      ...styles.toneBtn,
+                      ...(tone === t.id ? styles.toneBtnActive : {}),
+                    }}
                   >
-                    <span className="tone-label">{t.label}</span>
-                    <span className="tone-desc">{t.desc}</span>
+                    <span style={styles.toneLabel}>{t.label}</span>
+                    <span style={styles.toneDesc}>{t.desc}</span>
                   </button>
                 ))}
               </div>
@@ -138,9 +142,9 @@ export default function Home() {
 
             {/* Thread Length (Twitter only) */}
             {platform === 'twitter' && (
-              <div className="field-group">
-                <label className="label">
-                  THREAD LENGTH: <span className="length-value">{threadLength}</span>
+              <div style={styles.fieldGroup}>
+                <label style={styles.label}>
+                  THREAD LENGTH: <span style={styles.lengthValue}>{threadLength}</span>
                 </label>
                 <input
                   type="range"
@@ -148,9 +152,9 @@ export default function Home() {
                   max="15"
                   value={threadLength}
                   onChange={(e) => setThreadLength(parseInt(e.target.value))}
-                  className="slider"
+                  style={styles.slider}
                 />
-                <div className="slider-labels">
+                <div style={styles.sliderLabels}>
                   <span>3</span>
                   <span>15</span>
                 </div>
@@ -158,14 +162,14 @@ export default function Home() {
             )}
 
             {/* Niche (Optional) */}
-            <div className="field-group">
-              <label className="label">NICHE <span className="optional">(optional)</span></label>
+            <div style={styles.fieldGroup}>
+              <label style={styles.label}>NICHE <span style={styles.optional}>(optional)</span></label>
               <input
                 type="text"
                 value={niche}
                 onChange={(e) => setNiche(e.target.value)}
                 placeholder="e.g., SaaS founders, fitness coaches"
-                className="niche-input"
+                style={styles.nicheInput}
               />
             </div>
 
@@ -173,39 +177,36 @@ export default function Home() {
             <button
               type="submit"
               disabled={loading}
-              className={`submit-btn ${loading ? 'loading' : ''}`}
+              style={{
+                ...styles.submitBtn,
+                ...(loading ? styles.submitBtnLoading : {}),
+              }}
             >
-              {loading ? (
-                <span className="loading-text">
-                  <span className="spinner">◐</span> GENERATING...
-                </span>
-              ) : (
-                'REPURPOSE →'
-              )}
+              {loading ? 'GENERATING...' : 'REPURPOSE →'}
             </button>
 
-            {error && <div className="error">{error}</div>}
+            {error && <div style={styles.error}>{error}</div>}
           </form>
 
           {/* Output Section */}
-          <section className="output-section">
-            <div className="output-header">
-              <label className="label">
+          <section style={styles.outputSection}>
+            <div style={styles.outputHeader}>
+              <label style={styles.label}>
                 OUTPUT
-                {meta && <span className="meta"> — {meta.title} ({meta.wordCount} words)</span>}
+                {meta && <span style={styles.meta}> — {meta.title}</span>}
               </label>
               {output && (
-                <button onClick={copyToClipboard} className="copy-btn">
+                <button onClick={copyToClipboard} style={styles.copyBtn}>
                   {copied ? '✓ COPIED' : 'COPY'}
                 </button>
               )}
             </div>
-            <div className="output-box">
+            <div style={styles.outputBox}>
               {output ? (
-                <pre className="output-text">{output}</pre>
+                <pre style={styles.outputText}>{output}</pre>
               ) : (
-                <div className="placeholder">
-                  <span className="placeholder-icon">⚡</span>
+                <div style={styles.placeholder}>
+                  <span style={styles.placeholderIcon}>⚡</span>
                   <span>Your viral content will appear here</span>
                 </div>
               )}
@@ -213,7 +214,7 @@ export default function Home() {
           </section>
         </main>
 
-        <footer className="footer">
+        <footer style={styles.footer}>
           <span>Built for speed. Ship it.</span>
         </footer>
       </div>
@@ -224,401 +225,282 @@ export default function Home() {
           margin: 0;
           padding: 0;
         }
-
         body {
           background: #0a0a0a;
           color: #e5e5e5;
           font-family: 'JetBrains Mono', 'SF Mono', 'Consolas', monospace;
         }
-
         ::selection {
           background: #00ff88;
           color: #000;
         }
-      `}</style>
-
-      <style jsx>{`
-        .container {
-          min-height: 100vh;
-          position: relative;
-          overflow: hidden;
-        }
-
-        .grain {
-          position: fixed;
-          top: 0;
-          left: 0;
-          right: 0;
-          bottom: 0;
-          background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
-          opacity: 0.03;
-          pointer-events: none;
-          z-index: 1;
-        }
-
-        .header {
-          padding: 48px 24px 24px;
-          text-align: center;
-          position: relative;
-          z-index: 2;
-        }
-
-        .logo {
-          font-size: clamp(32px, 8vw, 56px);
-          font-weight: 900;
-          letter-spacing: -3px;
-          color: #fff;
-        }
-
-        .logo-accent {
-          color: #00ff88;
-          animation: blink 1s step-end infinite;
-        }
-
-        @keyframes blink {
-          50% { opacity: 0; }
-        }
-
-        .tagline {
-          font-size: 13px;
-          color: #555;
-          margin-top: 8px;
-          letter-spacing: 2px;
-          text-transform: uppercase;
-        }
-
-        .main {
-          max-width: 1200px;
-          margin: 0 auto;
-          padding: 24px;
-          display: grid;
-          grid-template-columns: 1fr 1fr;
-          gap: 32px;
-          position: relative;
-          z-index: 2;
-        }
-
         @media (max-width: 900px) {
-          .main {
-            grid-template-columns: 1fr;
+          main {
+            grid-template-columns: 1fr !important;
           }
-        }
-
-        .input-section {
-          display: flex;
-          flex-direction: column;
-          gap: 20px;
-        }
-
-        .output-section {
-          display: flex;
-          flex-direction: column;
-          gap: 12px;
-        }
-
-        .field-group {
-          display: flex;
-          flex-direction: column;
-        }
-
-        .label {
-          font-size: 11px;
-          font-weight: 700;
-          letter-spacing: 1.5px;
-          color: #666;
-          margin-bottom: 10px;
-        }
-
-        .optional {
-          color: #333;
-          font-weight: 400;
-        }
-
-        .meta {
-          color: #444;
-          font-weight: 400;
-          letter-spacing: 0;
-          text-transform: none;
-        }
-
-        .url-input,
-        .niche-input {
-          width: 100%;
-          padding: 14px 18px;
-          font-size: 15px;
-          font-family: inherit;
-          background: #111;
-          border: 2px solid #222;
-          border-radius: 6px;
-          color: #fff;
-          outline: none;
-          transition: border-color 0.2s, box-shadow 0.2s;
-        }
-
-        .url-input:focus,
-        .niche-input:focus {
-          border-color: #00ff88;
-          box-shadow: 0 0 0 3px rgba(0, 255, 136, 0.1);
-        }
-
-        .url-input::placeholder,
-        .niche-input::placeholder {
-          color: #444;
-        }
-
-        .platform-grid {
-          display: grid;
-          grid-template-columns: repeat(3, 1fr);
-          gap: 10px;
-        }
-
-        .platform-btn {
-          padding: 16px 12px;
-          background: #111;
-          border: 2px solid #222;
-          border-radius: 6px;
-          cursor: pointer;
-          transition: all 0.2s;
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          gap: 6px;
-          font-family: inherit;
-        }
-
-        .platform-btn:hover {
-          border-color: #333;
-          background: #151515;
-        }
-
-        .platform-btn.active {
-          border-color: #00ff88;
-          background: #0a1a10;
-        }
-
-        .platform-icon {
-          font-size: 22px;
-          font-weight: 700;
-          color: #fff;
-        }
-
-        .platform-label {
-          font-size: 10px;
-          color: #666;
-          letter-spacing: 0.5px;
-        }
-
-        .tone-grid {
-          display: grid;
-          grid-template-columns: repeat(2, 1fr);
-          gap: 10px;
-        }
-
-        .tone-btn {
-          padding: 14px 16px;
-          background: #111;
-          border: 2px solid #222;
-          border-radius: 6px;
-          cursor: pointer;
-          transition: all 0.2s;
-          text-align: left;
-          display: flex;
-          flex-direction: column;
-          gap: 3px;
-          font-family: inherit;
-        }
-
-        .tone-btn:hover {
-          border-color: #333;
-          background: #151515;
-        }
-
-        .tone-btn.active {
-          border-color: #00ff88;
-          background: #0a1a10;
-        }
-
-        .tone-label {
-          font-size: 13px;
-          font-weight: 600;
-          color: #fff;
-        }
-
-        .tone-desc {
-          font-size: 10px;
-          color: #555;
-        }
-
-        .length-value {
-          color: #00ff88;
-          font-weight: 700;
-        }
-
-        .slider {
-          width: 100%;
-          height: 6px;
-          border-radius: 3px;
-          background: #222;
-          outline: none;
-          cursor: pointer;
-          -webkit-appearance: none;
-          appearance: none;
-        }
-
-        .slider::-webkit-slider-thumb {
-          -webkit-appearance: none;
-          appearance: none;
-          width: 18px;
-          height: 18px;
-          border-radius: 50%;
-          background: #00ff88;
-          cursor: pointer;
-          border: none;
-          box-shadow: 0 0 10px rgba(0, 255, 136, 0.4);
-        }
-
-        .slider::-moz-range-thumb {
-          width: 18px;
-          height: 18px;
-          border-radius: 50%;
-          background: #00ff88;
-          cursor: pointer;
-          border: none;
-        }
-
-        .slider-labels {
-          display: flex;
-          justify-content: space-between;
-          font-size: 10px;
-          color: #444;
-          margin-top: 6px;
-        }
-
-        .submit-btn {
-          padding: 18px 32px;
-          font-size: 14px;
-          font-weight: 700;
-          font-family: inherit;
-          letter-spacing: 1px;
-          background: #00ff88;
-          color: #000;
-          border: none;
-          border-radius: 6px;
-          cursor: pointer;
-          transition: all 0.2s;
-          margin-top: 8px;
-        }
-
-        .submit-btn:hover {
-          background: #00cc6a;
-          transform: translateY(-1px);
-        }
-
-        .submit-btn.loading {
-          background: #222;
-          color: #666;
-          cursor: not-allowed;
-          transform: none;
-        }
-
-        .loading-text {
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          gap: 10px;
-        }
-
-        .spinner {
-          display: inline-block;
-          animation: spin 0.8s linear infinite;
-        }
-
-        @keyframes spin {
-          from { transform: rotate(0deg); }
-          to { transform: rotate(360deg); }
-        }
-
-        .error {
-          padding: 14px 18px;
-          background: #1a0808;
-          border: 1px solid #441111;
-          border-radius: 6px;
-          color: #ff6666;
-          font-size: 13px;
-        }
-
-        .output-header {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-        }
-
-        .copy-btn {
-          padding: 8px 14px;
-          font-size: 11px;
-          font-weight: 600;
-          font-family: inherit;
-          letter-spacing: 1px;
-          background: transparent;
-          color: #00ff88;
-          border: 1px solid #00ff88;
-          border-radius: 4px;
-          cursor: pointer;
-          transition: all 0.2s;
-        }
-
-        .copy-btn:hover {
-          background: #00ff88;
-          color: #000;
-        }
-
-        .output-box {
-          flex: 1;
-          min-height: 500px;
-          padding: 24px;
-          background: #0c0c0c;
-          border: 2px solid #181818;
-          border-radius: 6px;
-          overflow: auto;
-        }
-
-        .output-text {
-          margin: 0;
-          font-size: 14px;
-          line-height: 1.8;
-          white-space: pre-wrap;
-          word-break: break-word;
-          font-family: inherit;
-          color: #ccc;
-        }
-
-        .placeholder {
-          height: 100%;
-          min-height: 450px;
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          justify-content: center;
-          gap: 16px;
-          color: #2a2a2a;
-          font-size: 14px;
-        }
-
-        .placeholder-icon {
-          font-size: 56px;
-          opacity: 0.5;
-        }
-
-        .footer {
-          padding: 48px 24px;
-          text-align: center;
-          font-size: 12px;
-          color: #2a2a2a;
-          letter-spacing: 1px;
-          position: relative;
-          z-index: 2;
         }
       `}</style>
     </>
   );
 }
+
+const styles = {
+  container: {
+    minHeight: '100vh',
+    background: '#0a0a0a',
+    position: 'relative',
+  },
+  header: {
+    padding: '48px 24px 24px',
+    textAlign: 'center',
+  },
+  logo: {
+    fontSize: '48px',
+    fontWeight: 900,
+    letterSpacing: '-3px',
+    color: '#fff',
+    margin: 0,
+    fontFamily: "'JetBrains Mono', monospace",
+  },
+  logoAccent: {
+    color: '#00ff88',
+  },
+  tagline: {
+    fontSize: '13px',
+    color: '#555',
+    marginTop: '8px',
+    letterSpacing: '2px',
+    textTransform: 'uppercase',
+    fontFamily: "'JetBrains Mono', monospace",
+  },
+  main: {
+    maxWidth: '1200px',
+    margin: '0 auto',
+    padding: '24px',
+    display: 'grid',
+    gridTemplateColumns: '1fr 1fr',
+    gap: '32px',
+  },
+  inputSection: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '20px',
+  },
+  outputSection: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '12px',
+  },
+  fieldGroup: {
+    display: 'flex',
+    flexDirection: 'column',
+  },
+  label: {
+    fontSize: '11px',
+    fontWeight: 700,
+    letterSpacing: '1.5px',
+    color: '#666',
+    marginBottom: '10px',
+    fontFamily: "'JetBrains Mono', monospace",
+  },
+  optional: {
+    color: '#333',
+    fontWeight: 400,
+  },
+  meta: {
+    color: '#444',
+    fontWeight: 400,
+    letterSpacing: 0,
+    textTransform: 'none',
+  },
+  urlInput: {
+    width: '100%',
+    padding: '14px 18px',
+    fontSize: '15px',
+    fontFamily: "'JetBrains Mono', monospace",
+    background: '#111',
+    border: '2px solid #222',
+    borderRadius: '6px',
+    color: '#fff',
+    outline: 'none',
+  },
+  nicheInput: {
+    width: '100%',
+    padding: '14px 18px',
+    fontSize: '14px',
+    fontFamily: "'JetBrains Mono', monospace",
+    background: '#111',
+    border: '2px solid #222',
+    borderRadius: '6px',
+    color: '#fff',
+    outline: 'none',
+  },
+  platformGrid: {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(3, 1fr)',
+    gap: '10px',
+  },
+  platformBtn: {
+    padding: '16px 12px',
+    background: '#111',
+    border: '2px solid #222',
+    borderRadius: '6px',
+    cursor: 'pointer',
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    gap: '6px',
+    fontFamily: "'JetBrains Mono', monospace",
+  },
+  platformBtnActive: {
+    borderColor: '#00ff88',
+    background: '#0a1a10',
+  },
+  platformIcon: {
+    fontSize: '22px',
+    fontWeight: 700,
+    color: '#fff',
+  },
+  platformLabel: {
+    fontSize: '10px',
+    color: '#666',
+    letterSpacing: '0.5px',
+  },
+  toneGrid: {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(2, 1fr)',
+    gap: '10px',
+  },
+  toneBtn: {
+    padding: '14px 16px',
+    background: '#111',
+    border: '2px solid #222',
+    borderRadius: '6px',
+    cursor: 'pointer',
+    textAlign: 'left',
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '3px',
+    fontFamily: "'JetBrains Mono', monospace",
+  },
+  toneBtnActive: {
+    borderColor: '#00ff88',
+    background: '#0a1a10',
+  },
+  toneLabel: {
+    fontSize: '13px',
+    fontWeight: 600,
+    color: '#fff',
+  },
+  toneDesc: {
+    fontSize: '10px',
+    color: '#555',
+  },
+  lengthValue: {
+    color: '#00ff88',
+    fontWeight: 700,
+  },
+  slider: {
+    width: '100%',
+    height: '6px',
+    borderRadius: '3px',
+    background: '#222',
+    outline: 'none',
+    cursor: 'pointer',
+    accentColor: '#00ff88',
+  },
+  sliderLabels: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    fontSize: '10px',
+    color: '#444',
+    marginTop: '6px',
+    fontFamily: "'JetBrains Mono', monospace",
+  },
+  submitBtn: {
+    padding: '18px 32px',
+    fontSize: '14px',
+    fontWeight: 700,
+    fontFamily: "'JetBrains Mono', monospace",
+    letterSpacing: '1px',
+    background: '#00ff88',
+    color: '#000',
+    border: 'none',
+    borderRadius: '6px',
+    cursor: 'pointer',
+    marginTop: '8px',
+  },
+  submitBtnLoading: {
+    background: '#222',
+    color: '#666',
+    cursor: 'not-allowed',
+  },
+  error: {
+    padding: '14px 18px',
+    background: '#1a0808',
+    border: '1px solid #441111',
+    borderRadius: '6px',
+    color: '#ff6666',
+    fontSize: '13px',
+    fontFamily: "'JetBrains Mono', monospace",
+  },
+  outputHeader: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  copyBtn: {
+    padding: '8px 14px',
+    fontSize: '11px',
+    fontWeight: 600,
+    fontFamily: "'JetBrains Mono', monospace",
+    letterSpacing: '1px',
+    background: 'transparent',
+    color: '#00ff88',
+    border: '1px solid #00ff88',
+    borderRadius: '4px',
+    cursor: 'pointer',
+  },
+  outputBox: {
+    flex: 1,
+    minHeight: '500px',
+    padding: '24px',
+    background: '#0c0c0c',
+    border: '2px solid #181818',
+    borderRadius: '6px',
+    overflow: 'auto',
+  },
+  outputText: {
+    margin: 0,
+    fontSize: '14px',
+    lineHeight: 1.8,
+    whiteSpace: 'pre-wrap',
+    wordBreak: 'break-word',
+    fontFamily: "'JetBrains Mono', monospace",
+    color: '#ccc',
+  },
+  placeholder: {
+    height: '100%',
+    minHeight: '450px',
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: '16px',
+    color: '#2a2a2a',
+    fontSize: '14px',
+    fontFamily: "'JetBrains Mono', monospace",
+  },
+  placeholderIcon: {
+    fontSize: '56px',
+    opacity: 0.5,
+  },
+  footer: {
+    padding: '48px 24px',
+    textAlign: 'center',
+    fontSize: '12px',
+    color: '#2a2a2a',
+    letterSpacing: '1px',
+    fontFamily: "'JetBrains Mono', monospace",
+  },
+};

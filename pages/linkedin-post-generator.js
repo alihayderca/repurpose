@@ -1,12 +1,21 @@
 import Head from 'next/head';
 import Link from 'next/link';
-import { SignUp, SignedOut, SignedIn } from '@clerk/nextjs';
+import { SignUp, useUser } from '@clerk/nextjs';
 import { useState } from 'react';
 import { useRouter } from 'next/router';
 
 export default function LinkedInPostGenerator() {
   const [showSignUp, setShowSignUp] = useState(false);
+  const { isSignedIn } = useUser();
   const router = useRouter();
+
+  const handleCTA = () => {
+    if (isSignedIn) {
+      router.push('/');
+    } else {
+      setShowSignUp(true);
+    }
+  };
 
   return (
     <>
@@ -23,56 +32,49 @@ export default function LinkedInPostGenerator() {
         <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet" />
       </Head>
 
-      <SignedIn>
-        {typeof window !== 'undefined' && router.push('/')}
-      </SignedIn>
+      <div style={styles.container}>
+        {showSignUp ? (
+          <div style={styles.authWrapper}>
+            <SignUp routing="hash" afterSignUpUrl="/" />
+            <button onClick={() => setShowSignUp(false)} style={styles.backBtn}>← Back</button>
+          </div>
+        ) : (
+          <>
+            <nav style={styles.nav}>
+              <Link href="/" style={styles.navLogo}>REPURPOSE<span style={styles.accent}>_</span></Link>
+              <Link href="/" style={styles.navLink}>{isSignedIn ? '← Back to App' : '← Back to Home'}</Link>
+            </nav>
 
-      <SignedOut>
-        <div style={styles.container}>
-          <nav style={styles.nav}>
-            <Link href="/" style={styles.navLogo}>REPURPOSE<span style={styles.accent}>_</span></Link>
-            <Link href="/" style={styles.navLink}>← Back to Home</Link>
-          </nav>
+            <section style={styles.hero}>
+              <div style={styles.badge}>💼 #1 LinkedIn Content Tool</div>
+              <h1 style={styles.h1}>Free LinkedIn Post Generator</h1>
+              <p style={styles.heroSub}>
+                Transform any article into a high-engagement LinkedIn post in 10 seconds. 
+                Optimized for the algorithm. Built for busy professionals.
+              </p>
+              <button onClick={handleCTA} style={styles.cta}>
+                {isSignedIn ? 'Generate a Post Now →' : 'Generate Your First Post Free →'}
+              </button>
+              <p style={styles.ctaNote}>No credit card required • 3 free posts/day</p>
+            </section>
 
-          {showSignUp ? (
-            <div style={styles.authWrapper}>
-              <SignUp routing="hash" afterSignUpUrl="/" />
-              <button onClick={() => setShowSignUp(false)} style={styles.backBtn}>← Back</button>
-            </div>
-          ) : (
-            <>
-              <section style={styles.hero}>
-                <div style={styles.badge}>💼 #1 LinkedIn Content Tool</div>
-                <h1 style={styles.h1}>
-                  Free LinkedIn Post Generator
-                </h1>
-                <p style={styles.heroSub}>
-                  Transform any article into a high-engagement LinkedIn post in 10 seconds. 
-                  Optimized for the algorithm. Built for busy professionals.
-                </p>
-                <button onClick={() => setShowSignUp(true)} style={styles.cta}>
-                  Generate Your First Post Free →
-                </button>
-                <p style={styles.ctaNote}>No credit card required • 3 free posts/day</p>
-              </section>
-
-              <section style={styles.demoSection}>
-                <div style={styles.demo}>
-                  <div style={styles.demoHeader}>
-                    <span style={styles.demoDot}></span>
-                    <span style={styles.demoDot}></span>
-                    <span style={styles.demoDot}></span>
-                    <span style={styles.demoTitle}>LinkedIn Post Generator</span>
+            <section style={styles.demoSection}>
+              <div style={styles.demo}>
+                <div style={styles.demoHeader}>
+                  <span style={styles.demoDot}></span>
+                  <span style={styles.demoDot}></span>
+                  <span style={styles.demoDot}></span>
+                  <span style={styles.demoTitle}>LinkedIn Post Generator</span>
+                </div>
+                <div style={styles.demoBody}>
+                  <div style={styles.demoInput}>
+                    <div style={styles.demoLabel}>PASTE URL</div>
+                    <div style={styles.demoUrl}>https://hbr.org/2024/01/leadership-trends</div>
                   </div>
-                  <div style={styles.demoBody}>
-                    <div style={styles.demoInput}>
-                      <div style={styles.demoLabel}>PASTE URL</div>
-                      <div style={styles.demoUrl}>https://hbr.org/2024/01/leadership-trends</div>
-                    </div>
-                    <div style={styles.demoArrow}>↓</div>
-                    <div style={styles.demoOutput}>
-                      <div style={styles.demoLabel}>GENERATED POST</div>
-                      <pre style={styles.demoText}>{`I turned down a promotion last month.
+                  <div style={styles.demoArrow}>↓</div>
+                  <div style={styles.demoOutput}>
+                    <div style={styles.demoLabel}>GENERATED POST</div>
+                    <pre style={styles.demoText}>{`I turned down a promotion last month.
 
 My team thought I was crazy.
 
@@ -99,101 +101,100 @@ Sometimes the best career move is saying no.
 What would you have done?
 
 #leadership #career #growth`}</pre>
-                    </div>
                   </div>
                 </div>
-              </section>
+              </div>
+            </section>
 
-              <section style={styles.section}>
-                <h2 style={styles.h2}>How the LinkedIn Post Generator Works</h2>
-                <div style={styles.steps}>
-                  <div style={styles.step}>
-                    <div style={styles.stepNum}>1</div>
-                    <h3 style={styles.stepTitle}>Paste any URL</h3>
-                    <p style={styles.stepText}>Article, blog post, industry report — any content you want to share.</p>
-                  </div>
-                  <div style={styles.step}>
-                    <div style={styles.stepNum}>2</div>
-                    <h3 style={styles.stepTitle}>AI crafts your hook</h3>
-                    <p style={styles.stepText}>We create a scroll-stopping first line that beats "see more."</p>
-                  </div>
-                  <div style={styles.step}>
-                    <div style={styles.stepNum}>3</div>
-                    <h3 style={styles.stepTitle}>Copy & post</h3>
-                    <p style={styles.stepText}>Get an algorithm-optimized post ready for engagement.</p>
-                  </div>
+            <section style={styles.section}>
+              <h2 style={styles.h2}>How the LinkedIn Post Generator Works</h2>
+              <div style={styles.steps}>
+                <div style={styles.step}>
+                  <div style={styles.stepNum}>1</div>
+                  <h3 style={styles.stepTitle}>Paste any URL</h3>
+                  <p style={styles.stepText}>Article, blog post, industry report — any content you want to share.</p>
                 </div>
-              </section>
-
-              <section style={styles.section}>
-                <h2 style={styles.h2}>Built for the LinkedIn Algorithm</h2>
-                <div style={styles.features}>
-                  <div style={styles.feature}>
-                    <span style={styles.featureIcon}>🎣</span>
-                    <h3 style={styles.featureTitle}>Killer First Line</h3>
-                    <p style={styles.featureText}>The hook that shows before "see more" — optimized to stop the scroll.</p>
-                  </div>
-                  <div style={styles.feature}>
-                    <span style={styles.featureIcon}>📱</span>
-                    <h3 style={styles.featureTitle}>Mobile-Optimized Format</h3>
-                    <p style={styles.featureText}>Short paragraphs, strategic white space, easy to read on phones.</p>
-                  </div>
-                  <div style={styles.feature}>
-                    <span style={styles.featureIcon}>💬</span>
-                    <h3 style={styles.featureTitle}>Engagement Triggers</h3>
-                    <p style={styles.featureText}>Questions and CTAs that drive comments — LinkedIn's top ranking signal.</p>
-                  </div>
-                  <div style={styles.feature}>
-                    <span style={styles.featureIcon}>#️⃣</span>
-                    <h3 style={styles.featureTitle}>Smart Hashtags</h3>
-                    <p style={styles.featureText}>3-5 relevant hashtags at the end — the format LinkedIn prefers.</p>
-                  </div>
+                <div style={styles.step}>
+                  <div style={styles.stepNum}>2</div>
+                  <h3 style={styles.stepTitle}>AI crafts your hook</h3>
+                  <p style={styles.stepText}>We create a scroll-stopping first line that beats "see more."</p>
                 </div>
-              </section>
-
-              <section style={styles.section}>
-                <h2 style={styles.h2}>LinkedIn Post Generator FAQ</h2>
-                <div style={styles.faq}>
-                  <div style={styles.faqItem}>
-                    <h3 style={styles.faqQ}>Will my posts sound like me?</h3>
-                    <p style={styles.faqA}>Choose from 4 tone options: professional, casual, provocative, or educational. Pick what matches your brand voice, then customize further if needed.</p>
-                  </div>
-                  <div style={styles.faqItem}>
-                    <h3 style={styles.faqQ}>How long are the generated posts?</h3>
-                    <p style={styles.faqA}>1,200-1,500 characters — the sweet spot for LinkedIn engagement. Long enough to provide value, short enough to get read.</p>
-                  </div>
-                  <div style={styles.faqItem}>
-                    <h3 style={styles.faqQ}>Can I use this for company pages?</h3>
-                    <p style={styles.faqA}>Yes! Works for personal profiles and company pages. Just adjust the tone to match your brand guidelines.</p>
-                  </div>
-                  <div style={styles.faqItem}>
-                    <h3 style={styles.faqQ}>What about LinkedIn's algorithm changes?</h3>
-                    <p style={styles.faqA}>We continuously update our prompts based on what's working now. The fundamentals — hooks, engagement, value — don't change.</p>
-                  </div>
+                <div style={styles.step}>
+                  <div style={styles.stepNum}>3</div>
+                  <h3 style={styles.stepTitle}>Copy & post</h3>
+                  <p style={styles.stepText}>Get an algorithm-optimized post ready for engagement.</p>
                 </div>
-              </section>
+              </div>
+            </section>
 
-              <section style={styles.finalCta}>
-                <h2 style={styles.finalCtaTitle}>Stop staring at a blank post</h2>
-                <p style={styles.finalCtaSub}>Generate scroll-stopping LinkedIn content in seconds</p>
-                <button onClick={() => setShowSignUp(true)} style={styles.cta}>
-                  Generate Your First Post Free →
-                </button>
-              </section>
-
-              <footer style={styles.footer}>
-                <div style={styles.footerLinks}>
-                  <Link href="/twitter-thread-generator" style={styles.footerLink}>Twitter Thread Generator</Link>
-                  <Link href="/threads-post-generator" style={styles.footerLink}>Threads Post Generator</Link>
-                  <Link href="/privacy" style={styles.footerLink}>Privacy</Link>
-                  <Link href="/terms" style={styles.footerLink}>Terms</Link>
+            <section style={styles.section}>
+              <h2 style={styles.h2}>Built for the LinkedIn Algorithm</h2>
+              <div style={styles.features}>
+                <div style={styles.feature}>
+                  <span style={styles.featureIcon}>🎣</span>
+                  <h3 style={styles.featureTitle}>Killer First Line</h3>
+                  <p style={styles.featureText}>The hook that shows before "see more" — optimized to stop the scroll.</p>
                 </div>
-                <p style={styles.footerCopy}>© 2025 Repurpose AI</p>
-              </footer>
-            </>
-          )}
-        </div>
-      </SignedOut>
+                <div style={styles.feature}>
+                  <span style={styles.featureIcon}>📱</span>
+                  <h3 style={styles.featureTitle}>Mobile-Optimized Format</h3>
+                  <p style={styles.featureText}>Short paragraphs, strategic white space, easy to read on phones.</p>
+                </div>
+                <div style={styles.feature}>
+                  <span style={styles.featureIcon}>💬</span>
+                  <h3 style={styles.featureTitle}>Engagement Triggers</h3>
+                  <p style={styles.featureText}>Questions and CTAs that drive comments — LinkedIn's top ranking signal.</p>
+                </div>
+                <div style={styles.feature}>
+                  <span style={styles.featureIcon}>#️⃣</span>
+                  <h3 style={styles.featureTitle}>Smart Hashtags</h3>
+                  <p style={styles.featureText}>3-5 relevant hashtags at the end — the format LinkedIn prefers.</p>
+                </div>
+              </div>
+            </section>
+
+            <section style={styles.section}>
+              <h2 style={styles.h2}>LinkedIn Post Generator FAQ</h2>
+              <div style={styles.faq}>
+                <div style={styles.faqItem}>
+                  <h3 style={styles.faqQ}>Will my posts sound like me?</h3>
+                  <p style={styles.faqA}>Choose from 4 tone options: professional, casual, provocative, or educational. Pick what matches your brand voice, then customize further if needed.</p>
+                </div>
+                <div style={styles.faqItem}>
+                  <h3 style={styles.faqQ}>How long are the generated posts?</h3>
+                  <p style={styles.faqA}>1,200-1,500 characters — the sweet spot for LinkedIn engagement. Long enough to provide value, short enough to get read.</p>
+                </div>
+                <div style={styles.faqItem}>
+                  <h3 style={styles.faqQ}>Can I use this for company pages?</h3>
+                  <p style={styles.faqA}>Yes! Works for personal profiles and company pages. Just adjust the tone to match your brand guidelines.</p>
+                </div>
+                <div style={styles.faqItem}>
+                  <h3 style={styles.faqQ}>What about LinkedIn's algorithm changes?</h3>
+                  <p style={styles.faqA}>We continuously update our prompts based on what's working now. The fundamentals — hooks, engagement, value — don't change.</p>
+                </div>
+              </div>
+            </section>
+
+            <section style={styles.finalCta}>
+              <h2 style={styles.finalCtaTitle}>Stop staring at a blank post</h2>
+              <p style={styles.finalCtaSub}>Generate scroll-stopping LinkedIn content in seconds</p>
+              <button onClick={handleCTA} style={styles.cta}>
+                {isSignedIn ? 'Go to App →' : 'Generate Your First Post Free →'}
+              </button>
+            </section>
+
+            <footer style={styles.footer}>
+              <div style={styles.footerLinks}>
+                <Link href="/twitter-thread-generator" style={styles.footerLink}>Twitter Thread Generator</Link>
+                <Link href="/threads-post-generator" style={styles.footerLink}>Threads Post Generator</Link>
+                <Link href="/privacy" style={styles.footerLink}>Privacy</Link>
+                <Link href="/terms" style={styles.footerLink}>Terms</Link>
+              </div>
+              <p style={styles.footerCopy}>© 2025 Repurpose AI</p>
+            </footer>
+          </>
+        )}
+      </div>
 
       <style jsx global>{`
         * { box-sizing: border-box; margin: 0; padding: 0; }

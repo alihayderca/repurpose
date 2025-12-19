@@ -1,12 +1,21 @@
 import Head from 'next/head';
 import Link from 'next/link';
-import { SignUp, SignedOut, SignedIn } from '@clerk/nextjs';
+import { SignUp, useUser } from '@clerk/nextjs';
 import { useState } from 'react';
 import { useRouter } from 'next/router';
 
 export default function TwitterThreadGenerator() {
   const [showSignUp, setShowSignUp] = useState(false);
+  const { isSignedIn } = useUser();
   const router = useRouter();
+
+  const handleCTA = () => {
+    if (isSignedIn) {
+      router.push('/');
+    } else {
+      setShowSignUp(true);
+    }
+  };
 
   return (
     <>
@@ -16,13 +25,11 @@ export default function TwitterThreadGenerator() {
         <meta name="keywords" content="twitter thread generator, thread maker, viral twitter threads, article to thread, blog to twitter, tweet generator" />
         <link rel="canonical" href="https://repurposeai.app/twitter-thread-generator" />
         
-        {/* Open Graph */}
         <meta property="og:title" content="Free Twitter Thread Generator | Turn Articles into Viral Threads" />
         <meta property="og:description" content="Generate viral Twitter threads from any article in seconds. Free AI tool." />
         <meta property="og:type" content="website" />
         <meta property="og:url" content="https://repurposeai.app/twitter-thread-generator" />
         
-        {/* Twitter Card */}
         <meta name="twitter:card" content="summary_large_image" />
         <meta name="twitter:title" content="Free Twitter Thread Generator" />
         <meta name="twitter:description" content="Turn any article into a viral Twitter thread in 10 seconds." />
@@ -30,59 +37,49 @@ export default function TwitterThreadGenerator() {
         <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet" />
       </Head>
 
-      <SignedIn>
-        {typeof window !== 'undefined' && router.push('/')}
-      </SignedIn>
+      <div style={styles.container}>
+        {showSignUp ? (
+          <div style={styles.authWrapper}>
+            <SignUp routing="hash" afterSignUpUrl="/" />
+            <button onClick={() => setShowSignUp(false)} style={styles.backBtn}>← Back</button>
+          </div>
+        ) : (
+          <>
+            <nav style={styles.nav}>
+              <Link href="/" style={styles.navLogo}>REPURPOSE<span style={styles.accent}>_</span></Link>
+              <Link href="/" style={styles.navLink}>{isSignedIn ? '← Back to App' : '← Back to Home'}</Link>
+            </nav>
 
-      <SignedOut>
-        <div style={styles.container}>
-          {/* Nav */}
-          <nav style={styles.nav}>
-            <Link href="/" style={styles.navLogo}>REPURPOSE<span style={styles.accent}>_</span></Link>
-            <Link href="/" style={styles.navLink}>← Back to Home</Link>
-          </nav>
+            <section style={styles.hero}>
+              <div style={styles.badge}>🐦 #1 Twitter Thread Tool</div>
+              <h1 style={styles.h1}>Free Twitter Thread Generator</h1>
+              <p style={styles.heroSub}>
+                Turn any article, blog post, or newsletter into a viral Twitter thread in 10 seconds. 
+                AI-powered. No writing skills needed.
+              </p>
+              <button onClick={handleCTA} style={styles.cta}>
+                {isSignedIn ? 'Generate a Thread Now →' : 'Generate Your First Thread Free →'}
+              </button>
+              <p style={styles.ctaNote}>No credit card required • 3 free threads/day</p>
+            </section>
 
-          {showSignUp ? (
-            <div style={styles.authWrapper}>
-              <SignUp routing="hash" afterSignUpUrl="/" />
-              <button onClick={() => setShowSignUp(false)} style={styles.backBtn}>← Back</button>
-            </div>
-          ) : (
-            <>
-              {/* Hero */}
-              <section style={styles.hero}>
-                <div style={styles.badge}>🐦 #1 Twitter Thread Tool</div>
-                <h1 style={styles.h1}>
-                  Free Twitter Thread Generator
-                </h1>
-                <p style={styles.heroSub}>
-                  Turn any article, blog post, or newsletter into a viral Twitter thread in 10 seconds. 
-                  AI-powered. No writing skills needed.
-                </p>
-                <button onClick={() => setShowSignUp(true)} style={styles.cta}>
-                  Generate Your First Thread Free →
-                </button>
-                <p style={styles.ctaNote}>No credit card required • 3 free threads/day</p>
-              </section>
-
-              {/* Demo */}
-              <section style={styles.demoSection}>
-                <div style={styles.demo}>
-                  <div style={styles.demoHeader}>
-                    <span style={styles.demoDot}></span>
-                    <span style={styles.demoDot}></span>
-                    <span style={styles.demoDot}></span>
-                    <span style={styles.demoTitle}>Thread Generator</span>
+            <section style={styles.demoSection}>
+              <div style={styles.demo}>
+                <div style={styles.demoHeader}>
+                  <span style={styles.demoDot}></span>
+                  <span style={styles.demoDot}></span>
+                  <span style={styles.demoDot}></span>
+                  <span style={styles.demoTitle}>Thread Generator</span>
+                </div>
+                <div style={styles.demoBody}>
+                  <div style={styles.demoInput}>
+                    <div style={styles.demoLabel}>PASTE URL</div>
+                    <div style={styles.demoUrl}>https://paulgraham.com/startupideas.html</div>
                   </div>
-                  <div style={styles.demoBody}>
-                    <div style={styles.demoInput}>
-                      <div style={styles.demoLabel}>PASTE URL</div>
-                      <div style={styles.demoUrl}>https://paulgraham.com/startupideas.html</div>
-                    </div>
-                    <div style={styles.demoArrow}>↓</div>
-                    <div style={styles.demoOutput}>
-                      <div style={styles.demoLabel}>GENERATED THREAD</div>
-                      <pre style={styles.demoText}>{`1/ Stop trying to "think up" startup ideas.
+                  <div style={styles.demoArrow}>↓</div>
+                  <div style={styles.demoOutput}>
+                    <div style={styles.demoLabel}>GENERATED THREAD</div>
+                    <pre style={styles.demoText}>{`1/ Stop trying to "think up" startup ideas.
 
 The biggest mistake founders make?
 Solving problems that don't exist.
@@ -103,110 +100,104 @@ Sounds reasonable, right?
 
 Everyone says "Yeah, maybe I'd use that."
 But "maybe" × millions = zero users.`}</pre>
-                    </div>
                   </div>
                 </div>
-              </section>
+              </div>
+            </section>
 
-              {/* How it works */}
-              <section style={styles.section}>
-                <h2 style={styles.h2}>How the Twitter Thread Generator Works</h2>
-                <div style={styles.steps}>
-                  <div style={styles.step}>
-                    <div style={styles.stepNum}>1</div>
-                    <h3 style={styles.stepTitle}>Paste any URL</h3>
-                    <p style={styles.stepText}>Blog post, article, newsletter, news story — any public URL works.</p>
-                  </div>
-                  <div style={styles.step}>
-                    <div style={styles.stepNum}>2</div>
-                    <h3 style={styles.stepTitle}>AI extracts key points</h3>
-                    <p style={styles.stepText}>Our AI reads the content and identifies the most engaging insights.</p>
-                  </div>
-                  <div style={styles.step}>
-                    <div style={styles.stepNum}>3</div>
-                    <h3 style={styles.stepTitle}>Get a viral-format thread</h3>
-                    <p style={styles.stepText}>Receive a ready-to-post thread with hooks, insights, and CTAs.</p>
-                  </div>
+            <section style={styles.section}>
+              <h2 style={styles.h2}>How the Twitter Thread Generator Works</h2>
+              <div style={styles.steps}>
+                <div style={styles.step}>
+                  <div style={styles.stepNum}>1</div>
+                  <h3 style={styles.stepTitle}>Paste any URL</h3>
+                  <p style={styles.stepText}>Blog post, article, newsletter, news story — any public URL works.</p>
                 </div>
-              </section>
-
-              {/* Features */}
-              <section style={styles.section}>
-                <h2 style={styles.h2}>Why Our Thread Generator?</h2>
-                <div style={styles.features}>
-                  <div style={styles.feature}>
-                    <span style={styles.featureIcon}>⚡</span>
-                    <h3 style={styles.featureTitle}>10-Second Generation</h3>
-                    <p style={styles.featureText}>Not minutes. Seconds. Paste, click, done.</p>
-                  </div>
-                  <div style={styles.feature}>
-                    <span style={styles.featureIcon}>🎯</span>
-                    <h3 style={styles.featureTitle}>Viral Format Built-In</h3>
-                    <p style={styles.featureText}>Pattern interrupts, curiosity gaps, and CTAs — the stuff that actually gets retweets.</p>
-                  </div>
-                  <div style={styles.feature}>
-                    <span style={styles.featureIcon}>📏</span>
-                    <h3 style={styles.featureTitle}>Perfect Length</h3>
-                    <p style={styles.featureText}>Every tweet under 280 characters. Proper 1/ 2/ 3/ formatting included.</p>
-                  </div>
-                  <div style={styles.feature}>
-                    <span style={styles.featureIcon}>🎨</span>
-                    <h3 style={styles.featureTitle}>4 Tone Options</h3>
-                    <p style={styles.featureText}>Professional, casual, provocative, or educational — match your brand voice.</p>
-                  </div>
+                <div style={styles.step}>
+                  <div style={styles.stepNum}>2</div>
+                  <h3 style={styles.stepTitle}>AI extracts key points</h3>
+                  <p style={styles.stepText}>Our AI reads the content and identifies the most engaging insights.</p>
                 </div>
-              </section>
-
-              {/* FAQ */}
-              <section style={styles.section}>
-                <h2 style={styles.h2}>Twitter Thread Generator FAQ</h2>
-                <div style={styles.faq}>
-                  <div style={styles.faqItem}>
-                    <h3 style={styles.faqQ}>Is this thread generator free?</h3>
-                    <p style={styles.faqA}>Yes! You get 3 free thread generations per day. No credit card required. Pro users get unlimited generations for $9/month.</p>
-                  </div>
-                  <div style={styles.faqItem}>
-                    <h3 style={styles.faqQ}>What URLs can I use?</h3>
-                    <p style={styles.faqA}>Any public URL — blog posts, Medium articles, Substack newsletters, news articles, company blogs, and more.</p>
-                  </div>
-                  <div style={styles.faqItem}>
-                    <h3 style={styles.faqQ}>How long are the generated threads?</h3>
-                    <p style={styles.faqA}>You choose! Select anywhere from 3 to 15 tweets per thread depending on how much detail you want.</p>
-                  </div>
-                  <div style={styles.faqItem}>
-                    <h3 style={styles.faqQ}>Can I edit the threads?</h3>
-                    <p style={styles.faqA}>Absolutely. Copy the output, tweak any tweets you want, and post. Most users post as-is because the quality is already high.</p>
-                  </div>
-                  <div style={styles.faqItem}>
-                    <h3 style={styles.faqQ}>Is the content unique?</h3>
-                    <p style={styles.faqA}>Yes. Every thread is generated fresh based on the source content. No templates, no duplicate content.</p>
-                  </div>
+                <div style={styles.step}>
+                  <div style={styles.stepNum}>3</div>
+                  <h3 style={styles.stepTitle}>Get a viral-format thread</h3>
+                  <p style={styles.stepText}>Receive a ready-to-post thread with hooks, insights, and CTAs.</p>
                 </div>
-              </section>
+              </div>
+            </section>
 
-              {/* CTA */}
-              <section style={styles.finalCta}>
-                <h2 style={styles.finalCtaTitle}>Ready to create viral threads?</h2>
-                <p style={styles.finalCtaSub}>Join 500+ creators using our thread generator</p>
-                <button onClick={() => setShowSignUp(true)} style={styles.cta}>
-                  Generate Your First Thread Free →
-                </button>
-              </section>
-
-              {/* Footer */}
-              <footer style={styles.footer}>
-                <div style={styles.footerLinks}>
-                  <Link href="/linkedin-post-generator" style={styles.footerLink}>LinkedIn Post Generator</Link>
-                  <Link href="/threads-post-generator" style={styles.footerLink}>Threads Post Generator</Link>
-                  <Link href="/privacy" style={styles.footerLink}>Privacy</Link>
-                  <Link href="/terms" style={styles.footerLink}>Terms</Link>
+            <section style={styles.section}>
+              <h2 style={styles.h2}>Why Our Thread Generator?</h2>
+              <div style={styles.features}>
+                <div style={styles.feature}>
+                  <span style={styles.featureIcon}>⚡</span>
+                  <h3 style={styles.featureTitle}>10-Second Generation</h3>
+                  <p style={styles.featureText}>Not minutes. Seconds. Paste, click, done.</p>
                 </div>
-                <p style={styles.footerCopy}>© 2025 Repurpose AI</p>
-              </footer>
-            </>
-          )}
-        </div>
-      </SignedOut>
+                <div style={styles.feature}>
+                  <span style={styles.featureIcon}>🎯</span>
+                  <h3 style={styles.featureTitle}>Viral Format Built-In</h3>
+                  <p style={styles.featureText}>Pattern interrupts, curiosity gaps, and CTAs — the stuff that actually gets retweets.</p>
+                </div>
+                <div style={styles.feature}>
+                  <span style={styles.featureIcon}>📏</span>
+                  <h3 style={styles.featureTitle}>Perfect Length</h3>
+                  <p style={styles.featureText}>Every tweet under 280 characters. Proper 1/ 2/ 3/ formatting included.</p>
+                </div>
+                <div style={styles.feature}>
+                  <span style={styles.featureIcon}>🎨</span>
+                  <h3 style={styles.featureTitle}>4 Tone Options</h3>
+                  <p style={styles.featureText}>Professional, casual, provocative, or educational — match your brand voice.</p>
+                </div>
+              </div>
+            </section>
+
+            <section style={styles.section}>
+              <h2 style={styles.h2}>Twitter Thread Generator FAQ</h2>
+              <div style={styles.faq}>
+                <div style={styles.faqItem}>
+                  <h3 style={styles.faqQ}>Is this thread generator free?</h3>
+                  <p style={styles.faqA}>Yes! You get 3 free thread generations per day. No credit card required. Pro users get unlimited generations for $9/month.</p>
+                </div>
+                <div style={styles.faqItem}>
+                  <h3 style={styles.faqQ}>What URLs can I use?</h3>
+                  <p style={styles.faqA}>Any public URL — blog posts, Medium articles, Substack newsletters, news articles, company blogs, and more.</p>
+                </div>
+                <div style={styles.faqItem}>
+                  <h3 style={styles.faqQ}>How long are the generated threads?</h3>
+                  <p style={styles.faqA}>You choose! Select anywhere from 3 to 15 tweets per thread depending on how much detail you want.</p>
+                </div>
+                <div style={styles.faqItem}>
+                  <h3 style={styles.faqQ}>Can I edit the threads?</h3>
+                  <p style={styles.faqA}>Absolutely. Copy the output, tweak any tweets you want, and post. Most users post as-is because the quality is already high.</p>
+                </div>
+                <div style={styles.faqItem}>
+                  <h3 style={styles.faqQ}>Is the content unique?</h3>
+                  <p style={styles.faqA}>Yes. Every thread is generated fresh based on the source content. No templates, no duplicate content.</p>
+                </div>
+              </div>
+            </section>
+
+            <section style={styles.finalCta}>
+              <h2 style={styles.finalCtaTitle}>Ready to create viral threads?</h2>
+              <p style={styles.finalCtaSub}>Join 500+ creators using our thread generator</p>
+              <button onClick={handleCTA} style={styles.cta}>
+                {isSignedIn ? 'Go to App →' : 'Generate Your First Thread Free →'}
+              </button>
+            </section>
+
+            <footer style={styles.footer}>
+              <div style={styles.footerLinks}>
+                <Link href="/linkedin-post-generator" style={styles.footerLink}>LinkedIn Post Generator</Link>
+                <Link href="/threads-post-generator" style={styles.footerLink}>Threads Post Generator</Link>
+                <Link href="/privacy" style={styles.footerLink}>Privacy</Link>
+                <Link href="/terms" style={styles.footerLink}>Terms</Link>
+              </div>
+              <p style={styles.footerCopy}>© 2025 Repurpose AI</p>
+            </footer>
+          </>
+        )}
+      </div>
 
       <style jsx global>{`
         * { box-sizing: border-box; margin: 0; padding: 0; }

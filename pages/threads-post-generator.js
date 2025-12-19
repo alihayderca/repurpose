@@ -1,12 +1,21 @@
 import Head from 'next/head';
 import Link from 'next/link';
-import { SignUp, SignedOut, SignedIn } from '@clerk/nextjs';
+import { SignUp, useUser } from '@clerk/nextjs';
 import { useState } from 'react';
 import { useRouter } from 'next/router';
 
 export default function ThreadsPostGenerator() {
   const [showSignUp, setShowSignUp] = useState(false);
+  const { isSignedIn } = useUser();
   const router = useRouter();
+
+  const handleCTA = () => {
+    if (isSignedIn) {
+      router.push('/');
+    } else {
+      setShowSignUp(true);
+    }
+  };
 
   return (
     <>
@@ -23,56 +32,49 @@ export default function ThreadsPostGenerator() {
         <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet" />
       </Head>
 
-      <SignedIn>
-        {typeof window !== 'undefined' && router.push('/')}
-      </SignedIn>
+      <div style={styles.container}>
+        {showSignUp ? (
+          <div style={styles.authWrapper}>
+            <SignUp routing="hash" afterSignUpUrl="/" />
+            <button onClick={() => setShowSignUp(false)} style={styles.backBtn}>← Back</button>
+          </div>
+        ) : (
+          <>
+            <nav style={styles.nav}>
+              <Link href="/" style={styles.navLogo}>REPURPOSE<span style={styles.accent}>_</span></Link>
+              <Link href="/" style={styles.navLink}>{isSignedIn ? '← Back to App' : '← Back to Home'}</Link>
+            </nav>
 
-      <SignedOut>
-        <div style={styles.container}>
-          <nav style={styles.nav}>
-            <Link href="/" style={styles.navLogo}>REPURPOSE<span style={styles.accent}>_</span></Link>
-            <Link href="/" style={styles.navLink}>← Back to Home</Link>
-          </nav>
+            <section style={styles.hero}>
+              <div style={styles.badge}>@ Threads Content Tool</div>
+              <h1 style={styles.h1}>Free Threads Post Generator</h1>
+              <p style={styles.heroSub}>
+                Transform any article into authentic Threads content in 10 seconds. 
+                Casual, conversational posts that feel native to the platform.
+              </p>
+              <button onClick={handleCTA} style={styles.cta}>
+                {isSignedIn ? 'Generate a Post Now →' : 'Generate Your First Post Free →'}
+              </button>
+              <p style={styles.ctaNote}>No credit card required • 3 free posts/day</p>
+            </section>
 
-          {showSignUp ? (
-            <div style={styles.authWrapper}>
-              <SignUp routing="hash" afterSignUpUrl="/" />
-              <button onClick={() => setShowSignUp(false)} style={styles.backBtn}>← Back</button>
-            </div>
-          ) : (
-            <>
-              <section style={styles.hero}>
-                <div style={styles.badge}>@ Threads Content Tool</div>
-                <h1 style={styles.h1}>
-                  Free Threads Post Generator
-                </h1>
-                <p style={styles.heroSub}>
-                  Transform any article into authentic Threads content in 10 seconds. 
-                  Casual, conversational posts that feel native to the platform.
-                </p>
-                <button onClick={() => setShowSignUp(true)} style={styles.cta}>
-                  Generate Your First Post Free →
-                </button>
-                <p style={styles.ctaNote}>No credit card required • 3 free posts/day</p>
-              </section>
-
-              <section style={styles.demoSection}>
-                <div style={styles.demo}>
-                  <div style={styles.demoHeader}>
-                    <span style={styles.demoDot}></span>
-                    <span style={styles.demoDot}></span>
-                    <span style={styles.demoDot}></span>
-                    <span style={styles.demoTitle}>Threads Post Generator</span>
+            <section style={styles.demoSection}>
+              <div style={styles.demo}>
+                <div style={styles.demoHeader}>
+                  <span style={styles.demoDot}></span>
+                  <span style={styles.demoDot}></span>
+                  <span style={styles.demoDot}></span>
+                  <span style={styles.demoTitle}>Threads Post Generator</span>
+                </div>
+                <div style={styles.demoBody}>
+                  <div style={styles.demoInput}>
+                    <div style={styles.demoLabel}>PASTE URL</div>
+                    <div style={styles.demoUrl}>https://techcrunch.com/ai-startup-funding</div>
                   </div>
-                  <div style={styles.demoBody}>
-                    <div style={styles.demoInput}>
-                      <div style={styles.demoLabel}>PASTE URL</div>
-                      <div style={styles.demoUrl}>https://techcrunch.com/ai-startup-funding</div>
-                    </div>
-                    <div style={styles.demoArrow}>↓</div>
-                    <div style={styles.demoOutput}>
-                      <div style={styles.demoLabel}>GENERATED POST</div>
-                      <pre style={styles.demoText}>{`hot take: the AI funding bubble isn't actually a bubble
+                  <div style={styles.demoArrow}>↓</div>
+                  <div style={styles.demoOutput}>
+                    <div style={styles.demoLabel}>GENERATED POST</div>
+                    <pre style={styles.demoText}>{`hot take: the AI funding bubble isn't actually a bubble
 
 hear me out...
 
@@ -83,101 +85,100 @@ like companies are shipping real products. saving real money. not just vibes and
 maybe I'm wrong but the "this is definitely a bubble" takes feel lazy at this point
 
 idk what do you think`}</pre>
-                    </div>
                   </div>
                 </div>
-              </section>
+              </div>
+            </section>
 
-              <section style={styles.section}>
-                <h2 style={styles.h2}>How the Threads Generator Works</h2>
-                <div style={styles.steps}>
-                  <div style={styles.step}>
-                    <div style={styles.stepNum}>1</div>
-                    <h3 style={styles.stepTitle}>Paste any URL</h3>
-                    <p style={styles.stepText}>News article, blog post, industry report — any content worth discussing.</p>
-                  </div>
-                  <div style={styles.step}>
-                    <div style={styles.stepNum}>2</div>
-                    <h3 style={styles.stepTitle}>AI creates authentic content</h3>
-                    <p style={styles.stepText}>Casual, conversational — the way people actually talk on Threads.</p>
-                  </div>
-                  <div style={styles.step}>
-                    <div style={styles.stepNum}>3</div>
-                    <h3 style={styles.stepTitle}>Post & engage</h3>
-                    <p style={styles.stepText}>Get content designed to spark real conversations.</p>
-                  </div>
+            <section style={styles.section}>
+              <h2 style={styles.h2}>How the Threads Generator Works</h2>
+              <div style={styles.steps}>
+                <div style={styles.step}>
+                  <div style={styles.stepNum}>1</div>
+                  <h3 style={styles.stepTitle}>Paste any URL</h3>
+                  <p style={styles.stepText}>News article, blog post, industry report — any content worth discussing.</p>
                 </div>
-              </section>
-
-              <section style={styles.section}>
-                <h2 style={styles.h2}>Made for How Threads Works</h2>
-                <div style={styles.features}>
-                  <div style={styles.feature}>
-                    <span style={styles.featureIcon}>💬</span>
-                    <h3 style={styles.featureTitle}>Conversational Tone</h3>
-                    <p style={styles.featureText}>No corporate speak. Real, human language that fits the platform vibe.</p>
-                  </div>
-                  <div style={styles.feature}>
-                    <span style={styles.featureIcon}>🔥</span>
-                    <h3 style={styles.featureTitle}>Hot Takes Welcome</h3>
-                    <p style={styles.featureText}>Threads rewards opinions. We help you share yours without being boring.</p>
-                  </div>
-                  <div style={styles.feature}>
-                    <span style={styles.featureIcon}>📏</span>
-                    <h3 style={styles.featureTitle}>Perfect Length</h3>
-                    <p style={styles.featureText}>Under 500 characters — the sweet spot for Threads engagement.</p>
-                  </div>
-                  <div style={styles.feature}>
-                    <span style={styles.featureIcon}>🚫</span>
-                    <h3 style={styles.featureTitle}>No Hashtags</h3>
-                    <p style={styles.featureText}>Threads doesn't use hashtags like Instagram. We know that.</p>
-                  </div>
+                <div style={styles.step}>
+                  <div style={styles.stepNum}>2</div>
+                  <h3 style={styles.stepTitle}>AI creates authentic content</h3>
+                  <p style={styles.stepText}>Casual, conversational — the way people actually talk on Threads.</p>
                 </div>
-              </section>
-
-              <section style={styles.section}>
-                <h2 style={styles.h2}>Threads Post Generator FAQ</h2>
-                <div style={styles.faq}>
-                  <div style={styles.faqItem}>
-                    <h3 style={styles.faqQ}>What makes Threads different from Twitter?</h3>
-                    <p style={styles.faqA}>Threads is more casual, less performative. Our generator creates content that feels like a genuine thought, not a polished "thread."</p>
-                  </div>
-                  <div style={styles.faqItem}>
-                    <h3 style={styles.faqQ}>Can it create multi-post threads?</h3>
-                    <p style={styles.faqA}>Yes! Choose between single posts or short threads (3-5 posts) depending on how much you want to say.</p>
-                  </div>
-                  <div style={styles.faqItem}>
-                    <h3 style={styles.faqQ}>Will it sound like me?</h3>
-                    <p style={styles.faqA}>The output is a starting point. Edit it to add your voice, then post. Most people tweak 1-2 lines and they're good.</p>
-                  </div>
-                  <div style={styles.faqItem}>
-                    <h3 style={styles.faqQ}>Is Threads even worth posting on?</h3>
-                    <p style={styles.faqA}>Threads hit 175M+ users faster than any app in history. Early adopters are building real audiences there now.</p>
-                  </div>
+                <div style={styles.step}>
+                  <div style={styles.stepNum}>3</div>
+                  <h3 style={styles.stepTitle}>Post & engage</h3>
+                  <p style={styles.stepText}>Get content designed to spark real conversations.</p>
                 </div>
-              </section>
+              </div>
+            </section>
 
-              <section style={styles.finalCta}>
-                <h2 style={styles.finalCtaTitle}>Get on Threads without the effort</h2>
-                <p style={styles.finalCtaSub}>Generate authentic content in seconds</p>
-                <button onClick={() => setShowSignUp(true)} style={styles.cta}>
-                  Generate Your First Post Free →
-                </button>
-              </section>
-
-              <footer style={styles.footer}>
-                <div style={styles.footerLinks}>
-                  <Link href="/twitter-thread-generator" style={styles.footerLink}>Twitter Thread Generator</Link>
-                  <Link href="/linkedin-post-generator" style={styles.footerLink}>LinkedIn Post Generator</Link>
-                  <Link href="/privacy" style={styles.footerLink}>Privacy</Link>
-                  <Link href="/terms" style={styles.footerLink}>Terms</Link>
+            <section style={styles.section}>
+              <h2 style={styles.h2}>Made for How Threads Works</h2>
+              <div style={styles.features}>
+                <div style={styles.feature}>
+                  <span style={styles.featureIcon}>💬</span>
+                  <h3 style={styles.featureTitle}>Conversational Tone</h3>
+                  <p style={styles.featureText}>No corporate speak. Real, human language that fits the platform vibe.</p>
                 </div>
-                <p style={styles.footerCopy}>© 2025 Repurpose AI</p>
-              </footer>
-            </>
-          )}
-        </div>
-      </SignedOut>
+                <div style={styles.feature}>
+                  <span style={styles.featureIcon}>🔥</span>
+                  <h3 style={styles.featureTitle}>Hot Takes Welcome</h3>
+                  <p style={styles.featureText}>Threads rewards opinions. We help you share yours without being boring.</p>
+                </div>
+                <div style={styles.feature}>
+                  <span style={styles.featureIcon}>📏</span>
+                  <h3 style={styles.featureTitle}>Perfect Length</h3>
+                  <p style={styles.featureText}>Under 500 characters — the sweet spot for Threads engagement.</p>
+                </div>
+                <div style={styles.feature}>
+                  <span style={styles.featureIcon}>🚫</span>
+                  <h3 style={styles.featureTitle}>No Hashtags</h3>
+                  <p style={styles.featureText}>Threads doesn't use hashtags like Instagram. We know that.</p>
+                </div>
+              </div>
+            </section>
+
+            <section style={styles.section}>
+              <h2 style={styles.h2}>Threads Post Generator FAQ</h2>
+              <div style={styles.faq}>
+                <div style={styles.faqItem}>
+                  <h3 style={styles.faqQ}>What makes Threads different from Twitter?</h3>
+                  <p style={styles.faqA}>Threads is more casual, less performative. Our generator creates content that feels like a genuine thought, not a polished "thread."</p>
+                </div>
+                <div style={styles.faqItem}>
+                  <h3 style={styles.faqQ}>Can it create multi-post threads?</h3>
+                  <p style={styles.faqA}>Yes! Choose between single posts or short threads (3-5 posts) depending on how much you want to say.</p>
+                </div>
+                <div style={styles.faqItem}>
+                  <h3 style={styles.faqQ}>Will it sound like me?</h3>
+                  <p style={styles.faqA}>The output is a starting point. Edit it to add your voice, then post. Most people tweak 1-2 lines and they're good.</p>
+                </div>
+                <div style={styles.faqItem}>
+                  <h3 style={styles.faqQ}>Is Threads even worth posting on?</h3>
+                  <p style={styles.faqA}>Threads hit 175M+ users faster than any app in history. Early adopters are building real audiences there now.</p>
+                </div>
+              </div>
+            </section>
+
+            <section style={styles.finalCta}>
+              <h2 style={styles.finalCtaTitle}>Get on Threads without the effort</h2>
+              <p style={styles.finalCtaSub}>Generate authentic content in seconds</p>
+              <button onClick={handleCTA} style={styles.cta}>
+                {isSignedIn ? 'Go to App →' : 'Generate Your First Post Free →'}
+              </button>
+            </section>
+
+            <footer style={styles.footer}>
+              <div style={styles.footerLinks}>
+                <Link href="/twitter-thread-generator" style={styles.footerLink}>Twitter Thread Generator</Link>
+                <Link href="/linkedin-post-generator" style={styles.footerLink}>LinkedIn Post Generator</Link>
+                <Link href="/privacy" style={styles.footerLink}>Privacy</Link>
+                <Link href="/terms" style={styles.footerLink}>Terms</Link>
+              </div>
+              <p style={styles.footerCopy}>© 2025 Repurpose AI</p>
+            </footer>
+          </>
+        )}
+      </div>
 
       <style jsx global>{`
         * { box-sizing: border-box; margin: 0; padding: 0; }

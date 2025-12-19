@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Head from 'next/head';
 import { SignIn, SignUp, useUser, useClerk, SignedIn, SignedOut } from '@clerk/nextjs';
 
@@ -246,7 +246,7 @@ Microsoft, Apple, Google all started this way...`}</pre>
   );
 }
 
-// Dashboard (same as before)
+// Dashboard for signed in users
 function Dashboard() {
   const { user } = useUser();
   const { signOut } = useClerk();
@@ -268,7 +268,7 @@ function Dashboard() {
 
   const email = user?.primaryEmailAddress?.emailAddress;
 
-  useState(() => {
+  useEffect(() => {
     if (email) {
       fetch('/api/check-subscription', {
         method: 'POST',
